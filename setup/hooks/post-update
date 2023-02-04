@@ -1,0 +1,36 @@
+#!/bin/sh
+
+branch_name=$(git rev-parse --abbrev-ref HEAD)
+
+function check_for_symmetric_key() {
+    if [ -f "keys/symmetric_keyfile.key.enc" ];
+    then
+        python .git/hooks/decrypt_sym_key.py
+        if [ $? -eq 1 ]
+        then
+            echo "Decryption failed. Either private RSA Key or symmetric key have been corrupted"
+            echo "Revert back to a commit with valid encryption keys!"
+            exit 1
+        fi
+    else
+        echo "Symmetric key not found in the environment!\nCannot manage environment without keys!\nRevert back to an older commit with valid keys!"
+        exit 1
+    fi
+}
+
+function decode_and_merge(){
+    if [ -f $2];
+    then
+        if [ -f $1];
+        then
+            python .git/hooks/decrypt_env.py $2 .env.tmp
+            awk -F= '{a[$1]=$2}END{for(i in a) print i "=" a[i]}' .env.tmp $1 > $1
+            rm .env.tmp
+        else
+            openssl enc -in $2 -out $1 -d -aes256 -k keys/symmetric_keyfile.key
+        fi
+    fi
+}
+
+check_for_symmetric_key
+decode_and_merge ".env" "env/.env.${branch_name}.enc"

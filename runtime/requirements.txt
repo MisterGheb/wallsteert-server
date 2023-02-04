@@ -1,0 +1,13 @@
+chalice==1.27.2
+SQLAlchemy==1.4.46
+sqlalchemy-mixins==1.5.3
+alembic==1.9.2
+python-dotenv
+psycopg2==2.9.5
+requests
+marshmallow==3.19.0
+bcrypt
+pytest
+aws_lambda_powertools==2.7.1
+aws_xray_sdk==2.11.0
+https://github.com/trilogy-group/leangle/archive/refs/tags/v2.0.tar.gz

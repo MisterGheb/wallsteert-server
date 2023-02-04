@@ -1,0 +1,14 @@
+# pycache
+__pycache__/
+
+# Environments
+.venv
+venv
+../venv/
+.env
+.env.tmp
+
+# Private Key
+keys/public_key.pem
+keys/private_key.pem
+keys/symmetric_keyfile.key

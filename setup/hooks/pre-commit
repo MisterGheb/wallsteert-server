@@ -1,0 +1,110 @@
+#!/bin/bash
+exec < /dev/tty
+
+git remote update
+branch_name=$(git rev-parse --abbrev-ref HEAD)
+
+local_head=$(git rev-parse @)
+remote_head=$(git rev-parse @{u})
+common_ancestor=$(git merge-base @ @{u})
+
+function check_for_symmetric_key() {
+    if [ -f "keys/symmetric_keyfile.key.enc" ];
+    then
+        python .git/hooks/decrypt_sym_key.py
+        if [ $? -eq 1 ]
+        then
+            echo "Decryption failed. Either private RSA Key or symmetric key have been corrupted"
+            echo "Revert back to a commit with valid encryption keys!"
+            exit 1
+        fi
+    else
+        echo "Symmetric key not found in the environment!\nCannot manage environment without keys!\nRevert back to an older commit with valid keys!"
+        exit 1
+    fi
+}
+
+non_default_branch_warning() {
+    if [ -f "$1" ];
+    then
+        if [ -f "$2" ]
+        then
+            python .git/hooks/decrypt_env.py env/.env.${branch_name}.enc .env.tmp
+            if cmp "$1" ".env.tmp";
+            then
+                rm ".env.tmp"
+                break;
+            fi
+            rm ".env.tmp"
+        fi
+        while true; do
+            echo "[WARNING]: $1 has changed. However changes made to it will not be persisted in git as your are not on main"
+            echo "[WARNING]: Changes to $1 are only persisted when committed on main"
+            read -p "[WARNING]: Please confirm that you acknowledge the above message [y/n]" yn
+            if [ "$yn" = "" ]; then
+                yn='Y'
+            fi
+            case $yn in
+                [Yy] ) break;;
+                [Nn] ) exit 1;;
+                * ) echo "Please answer y or n for yes or no.";;
+            esac
+        done
+    fi
+}
+
+default_branch_confirmation_prompt(){
+    if [ -f "$2" ] && [ -f "$1" ];
+    then
+        python .git/hooks/decrypt_env.py env/.env.${branch_name}.enc .env.tmp
+        if ! cmp "$1" ".env.tmp";
+        then
+            while true; do
+                read -p "$1 has changed. Do you want the changes to be persisted? [y/n]" yn
+                if [ "$yn" = "" ]; then
+                    yn='Y'
+                fi
+                case $yn in
+                    [Yy] ) python .git/hooks/encrypt_env.py $1 $2; git add $2; break;;
+                    [Nn] ) break;;
+                    * ) echo "Please answer y or n for yes or no.";;
+                esac
+            done
+        fi
+        rm .env.tmp;
+    elif [ -f $1 ];
+    then
+        python .git/hooks/encrypt_env.py $1 $2;
+        git add $2
+    fi
+}
+
+default_branch_update_warning(){
+    echo "Committing on main is forbidden if local is not up-to-date with remote. Please pull from remote before committing"
+    echo "If you are unable to pull because you have uncommitted changes you don't want to lose, we recommend the following workflow"
+    echo "git add ."
+    echo "git stash save \"remote-sync temp stash\""
+    echo "git pull origin main --rebase"
+    echo "git stash pop"
+    echo "git add ."
+    echo "git commit -m <your commit message here>"
+    echo "(you may have to resolve any existing conflicts after the pull or pop stash step)"
+    exit 1
+}
+
+
+if [[ $branch_name != main ]]
+then
+    check_for_symmetric_key
+    non_default_branch_warning ".env" "env/.env.${branch_name}.enc"
+    rm ./keys/symmetric_keyfile.key
+else
+    if [[ "$local_head" != "$remote_head" && "$local_head" == "$common_ancestor" ]] 
+    then
+        default_branch_update_warning
+    else
+        check_for_symmetric_key
+        default_branch_confirmation_prompt ".env" "env/.env.${branch_name}.enc"
+        rm ./keys/symmetric_keyfile.key
+    fi
+fi

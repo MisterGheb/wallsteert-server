@@ -1,0 +1,65 @@
+name: CDK Deployment
+
+on: push
+
+env:
+  RSA_PRIVATE_KEY: ${{ secrets.RSA_PRIVATE_KEY }}
+  ENVIRONMENT_NAME: ${{ github.ref_name }}
+  REPOSITORY_NAME: ${{ github.repository }}
+
+jobs:
+  check:
+    outputs:
+      status: ${{ steps.check_env_file.outputs.files_exists }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Check Enc Env file existence
+        id: check_env_file
+        uses: andstor/file-existence-action@v2
+        with:
+          files: "env/.env.${{ github.ref_name }}.enc"
+
+  deploy:
+    name: Deploy CDK
+    needs: check
+    runs-on: ubuntu-latest
+    if: needs.check.outputs.status == 'true'
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+      
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      # Decrypt Encrypted Env file
+      - name: Load env
+        run: |
+          pip install -r setup/requirements.txt
+          python setup/load_env.py "env/.env.${{ github.ref_name }}.enc"
+
+      # Load .env file
+      - name: Load .env file
+        uses: xom9ikk/dotenv@v1.0.2
+        with:
+          path: ./
+
+      # Load vendors
+      - name: Load vendors
+        run: |
+          cd runtime
+          git submodule add https://github.com/trilogy-group/process-bp-chalice-vendors vendor
+          cd ..
+
+      - name: Deploy stack
+        run: |
+          bash scripts/deploy.sh
+          python setup/send_cdk_data.py
+          
