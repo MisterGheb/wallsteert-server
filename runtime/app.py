@@ -18,8 +18,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from chalicelib.authorizer import auth_blueprint
-from chalicelib.api.user import auth_routes
-from chalicelib.api.note import note_routes
+from chalicelib.api.users import auth_routes
 from alembic.config import main 
 
 app = Chalice(app_name='TU Feb 2023 <Mina>')
@@ -32,7 +31,6 @@ app.register_middleware(ConvertToMiddleware(tracer.capture_lambda_handler))
 
 app.register_blueprint(auth_blueprint)
 app.register_blueprint(auth_routes, url_prefix='/auth')
-app.register_blueprint(note_routes, url_prefix='/notes')
 app.log.setLevel(logging.DEBUG)
 
 if os.getenv('RUN_MIGRATE', 'True') == 'True':

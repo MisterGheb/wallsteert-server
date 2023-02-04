@@ -19,8 +19,13 @@ if config.config_file_name is not None:
 
 from chalicelib.constants import DB_ENDPOINT
 from chalicelib.models.base import Base
-from chalicelib.models.user import User
-from chalicelib.models.note import Note
+from chalicelib.models.users import Users
+from chalicelib.models.holdings import Holdings
+from chalicelib.models.market_day import Market_day
+from chalicelib.models.ohlcv import Ohlcv
+from chalicelib.models.orders import Orders
+from chalicelib.models.sectors import Sectors
+from chalicelib.models.stocks import Stocks
 
 target_metadata = Base.metadata
 # target_metadata = None

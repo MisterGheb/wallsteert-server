@@ -1,6 +1,6 @@
 from chalice import Blueprint, AuthResponse
 
-from .models.user import User
+from .models.users import Users
 
 auth_blueprint = Blueprint(__name__)
 

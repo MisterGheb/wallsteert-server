@@ -9,8 +9,8 @@ import bcrypt
 from chalice import Blueprint, BadRequestError, UnauthorizedError
 
 from ..authorizer import token_auth
-from ..models.user import User
-from ..serializers.user import UserSchema
+from ..models.users import Users
+from ..serializers.users import UsersSchema
 from ..constants import *
 
 auth_routes = Blueprint('auth')
