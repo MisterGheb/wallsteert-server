@@ -25,8 +25,9 @@ logger = logging.getLogger(__name__)
 
 def match_orders():
     json_body = orders_routes.current_request.json_body
-    buy_orders = (Orders.bid_price, Orders.executed_volume).where(type="BUY").order_by(Orders.bid_price.desc())
-    sell_orders = (Orders.bid_price, Orders.executed_volume).where(type="SELL").order_by(Orders.bid_price.asc())
-    current_price = buy_orders.join(sell_orders).filter(buy_orders.bid_price>=sell_orders.bid_price).all()
+ 
+    buy_orders = Orders.where(type="BUY").order_by(Orders.bid_price.desc())
+    # sell_orders = (Orders.bid_price, Orders.executed_volume).where(type="SELL").order_by(Orders.bid_price.asc())
+    # current_price = buy_orders.join(sell_orders).filter(buy_orders.bid_price>=sell_orders.bid_price).all()
 
-    return OrdersSchema().dump(current_price)
+    return OrdersSchema().dump(buy_orders)

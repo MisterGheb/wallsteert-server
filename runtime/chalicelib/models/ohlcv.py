@@ -10,10 +10,10 @@ from ..constants import CONST_STRING_LENGTH, CONST_TOKEN_LENGTH
 class Ohlcv(BaseModel):
     __tablename__ = 'ohlcv'
     
-    open = Column(Numeric(12,2), nullable=False),
-    high = Column(Numeric(12,2), nullable=False),
-    low = Column(Numeric(12,2), nullable=False),
-    close = Column(Numeric(12,2), nullable=False),
+    open = Column(Numeric(12,2), nullable=False)
+    high = Column(Numeric(12,2), nullable=False)
+    low = Column(Numeric(12,2), nullable=False)
+    close = Column(Numeric(12,2), nullable=False)
     volume = Column(Integer, nullable=False)
     id = Column(Integer, primary_key=True)
     market_id = Column(Integer, ForeignKey("market_day.id"))
