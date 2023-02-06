@@ -24,16 +24,13 @@ logger = logging.getLogger(__name__)
 @market_day_routes.route('/open', methods=['POST'], cors=True)
 
 def sectors():
-    json_body = market_day_routes.current_request.json_body
-    data_body = SectorsSchema().load(json_body)
-
-    try:
-        market_day = Market_day.create(**data_body) 
-    except exc.IntegrityError as ex:
-        raise BadRequestError(ex._message())
+    
+    market_dict = {"date":"20230201", "status":"open"}
+    
+    Market_day.create(**market_dict)
 
 
-    return SectorsSchema().dump(sectors)
+    return Market_daySchema().dump(market_day)
 
 
 # MARKET DAY CLOSED
@@ -45,7 +42,7 @@ def sectors():
 
 def sectors():
     json_body = market_day_routes.current_request.json_body
-    data_body = SectorsSchema().load(json_body)
+    data_body = Market_daySchema().load(json_body)
 
     try:
         market_day = Market_day.create(**data_body) 
@@ -53,5 +50,21 @@ def sectors():
         raise BadRequestError(ex._message())
 
 
-    return SectorsSchema().dump(sectors)
+    return Market_daySchema().dump(market_day)
 
+@leangle.describe.tags(["Market_day"])
+@leangle.describe.parameter(name='body', _in='body', description='Close the market for all trading', schema='Market_daySchema')
+@leangle.describe.response(200, description='Market closed for trading', schema='Market_daySchema')
+@market_day_routes.route('/ohlc', methods=['GET'], cors=True)
+
+def sectors():
+    json_body = market_day_routes.current_request.json_body
+    data_body = Market_daySchema().load(json_body)
+
+    try:
+        market_day = Market_day.create(**data_body) 
+    except exc.IntegrityError as ex:
+        raise BadRequestError(ex._message())
+
+
+    return Market_daySchema().dump(sectors)

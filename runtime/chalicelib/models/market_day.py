@@ -13,3 +13,10 @@ class Market_day(BaseModel):
     status = Column(String(10), nullable=False)
 
     ohlcv = relationship('Ohlcv')
+
+
+
+
+    
+
+    
