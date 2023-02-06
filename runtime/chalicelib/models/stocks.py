@@ -1,5 +1,6 @@
-from sqlalchemy import Column, String, Integer, Numeric
+from sqlalchemy import Column, String, Integer, Numeric, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey
 
 from .base import BaseModel
 from ..constants import CONST_STRING_LENGTH, CONST_TOKEN_LENGTH
@@ -13,5 +14,8 @@ class Stocks(BaseModel):
     total_volume = Column(Integer, nullable=False)
     unallocated = Column(Integer, nullable=False)
     price = Column(Numeric(12,2), nullable=False)
+    sectors_id = Column(Integer, ForeignKey("sectors.id"))
 
-    sector_id = relationship('Sectors', back_populates='id')
+    ohlcv = relationship('Ohlcv')
+    orders = relationship('Orders')
+    holdings = relationship('Holdings')

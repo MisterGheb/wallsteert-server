@@ -1,10 +1,11 @@
 from sqlalchemy import Column, String, Integer, Numeric
 from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey
 
 from .base import BaseModel
 from ..constants import CONST_STRING_LENGTH, CONST_TOKEN_LENGTH
-from .market_day import Market_day
-from .stocks import Stocks
+
+
 
 class Ohlcv(BaseModel):
     __tablename__ = 'ohlcv'
@@ -14,8 +15,8 @@ class Ohlcv(BaseModel):
     low = Column(Numeric(12,2), nullable=False),
     close = Column(Numeric(12,2), nullable=False),
     volume = Column(Integer, nullable=False)
-    id = Column(Integer, nullable=False)
+    id = Column(Integer, primary_key=True)
+    market_id = Column(Integer, ForeignKey("market_day.id"))
+    stocks_id = Column(Integer, ForeignKey("stocks.id"))
 
-
-    market_id = relationship('Market_day', back_populates='id')
-    stock_id = relationship('Stocks', back_populates='id')
+   

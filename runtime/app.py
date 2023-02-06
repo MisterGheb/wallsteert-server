@@ -7,6 +7,9 @@ from chalice import Chalice, CORSConfig, Response
 from chalice.app import ConvertToMiddleware
 from aws_lambda_powertools import Logger
 from aws_lambda_powertools import Tracer
+from chalicelib.api.orders import orders_routes
+from chalicelib.api.stocks import stocks_routes
+
 if 'LAMBDA_TASK_ROOT' in os.environ:
   from chalice_utils.swagger import TemplatedSwaggerGenerator #noqa
   from chalice_utils.planner import PlanEncoder #noqa
@@ -31,6 +34,7 @@ app.register_middleware(ConvertToMiddleware(tracer.capture_lambda_handler))
 
 app.register_blueprint(auth_blueprint)
 app.register_blueprint(auth_routes, url_prefix='/auth')
+app.register_blueprint(orders_routes, url_prefix='/api/v1/orders')
 app.log.setLevel(logging.DEBUG)
 
 if os.getenv('RUN_MIGRATE', 'True') == 'True':

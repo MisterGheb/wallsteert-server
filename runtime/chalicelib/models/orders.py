@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, Integer, Numeric, TIMESTAMP
 from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey
 
 from .base import BaseModel
 from ..constants import CONST_STRING_LENGTH, CONST_TOKEN_LENGTH
@@ -17,6 +18,6 @@ class Orders(BaseModel):
     status = Column(String(20), nullable=False)
     bid_volume = Column(Integer, nullable=False)
     executed_volume = Column(Integer, nullable=False)
+    stocks_id = Column(Integer, ForeignKey("stocks.id"))
+    users_id = Column(Integer, ForeignKey("users.id"))
 
-    user_id = relationship('Users', back_populates='id')
-    stock_id = relationship('Stocks', back_populates='id')

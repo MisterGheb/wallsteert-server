@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, Integer, Numeric, TIMESTAMP, Date
 from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey
 
 from .base import BaseModel
 from ..constants import CONST_STRING_LENGTH, CONST_TOKEN_LENGTH
@@ -13,6 +14,6 @@ class Holdings(BaseModel):
     volume = Column(Numeric(12,2), nullable=False)
     bid_price = Column(String(4), nullable=False)
     bought_on = Column(Date, nullable=False)
-
-    user_id = relationship('Users', back_populates='id')
-    stock_id = relationship('Stocks', back_populates='id')
+    stocks_id = Column(Integer, ForeignKey("stocks.id"))
+    users_id = Column(Integer, ForeignKey("users.id"))
+    
