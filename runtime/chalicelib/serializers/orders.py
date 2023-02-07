@@ -3,7 +3,7 @@ from marshmallow import Schema, fields, EXCLUDE
 
 @leangle.add_schema()
 class OrdersSchema(Schema):
-    id = fields.Integer()
+    id = fields.Integer(dump_only=True)
     bid_price = fields.Number()
     type = fields.String()
     created_at = fields.Time()

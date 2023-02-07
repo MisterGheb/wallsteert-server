@@ -1,114 +1,152 @@
 import logging
-import requests
-import random
-import string
-import os
-import binascii
 import leangle
-import bcrypt
-from chalice import Blueprint, BadRequestError, UnauthorizedError
-from sqlalchemy import desc, asc, exc, delete
-from marshmallow import exceptions
-from datetime import timezone
-import datetime
+from chalice import Blueprint, BadRequestError, UnauthorizedError, Response
+from sqlalchemy.exc import NoResultFound
 
 from ..authorizer import token_auth
-from ..models.orders import Orders
-from ..serializers.orders import OrdersSchema
-from ..constants import *
+from ..models.orders import Orders as Order
+from ..models.stocks import Stocks as Stock
+from ..models.users import Users as User
+from ..models.holdings import Holdings as Holding
+from ..models.market_day import Market_day as MarketDay
+from ..models.ohlcv import Ohlcv as OHLCV
+from ..serializers.orders import OrdersSchema as OrderSchema
 
-orders_routes = Blueprint('orders')
+orders_routes = Blueprint(__name__)
 logger = logging.getLogger(__name__)
 
-@leangle.describe.tags(["Orders"])
-@leangle.describe.parameter(name='body', _in='body', description='List All Orders', schema='OrdersSchema')
-@leangle.describe.response(200, description='Orders Listed', schema='OrdersSchema')
-@orders_routes.route('/', methods=['GET'], cors=True)
+@leangle.describe.tags(["Order"])
+@leangle.describe.response(200, description='Orders', schema='OrderSchema')
+@orders_routes.route('/', methods=['GET'], cors=True,  authorizer=token_auth)
 def list_orders():
-    orders = Orders.all()
+    user_id = orders_routes.current_request.context['authorizer']['principalId']
+    all_orders = Order.where(user=user_id).all()
+    return OrderSchema().dump(all_orders, many=True)
 
-    status = "Success"
-
-    if(orders==[]):
-        status="No orders in the system"
-
-    return {'status': status, 'data': OrdersSchema(many=True).dump(orders)}
-
-
-
-@leangle.describe.tags(["Orders"])
-@leangle.describe.parameter(name='body', _in='body', description='Create Order', schema='OrdersSchema')
-@leangle.describe.response(200, description='Order Created', schema='OrdersSchema')
-@orders_routes.route('/', methods=['POST'], cors=True)
+@leangle.describe.tags(["Order"])
+@leangle.describe.parameter(name='body', _in='body', description='Create a new order', schema='OrderSchema')
+@leangle.describe.response(201, description='Created', schema='OrderSchema')
+@orders_routes.route('/', methods=['POST'], cors=True, authorizer=token_auth )
 def create_order():
+    user_id = orders_routes.current_request.context['authorizer']['principalId']
+    user = User.find_or_fail(user_id)
+
     json_body = orders_routes.current_request.json_body
-    try:
-        data_obj = OrdersSchema().load(json_body)
-    except TypeError as ex:
-        raise BadRequestError(ex)
-    except exceptions.ValidationError as ex:
-        raise BadRequestError(ex)
+    order_data = OrderSchema().load(json_body)
+    total_order_price = float(order_data['bid_price'])*order_data['bid_volume']
+    if order_data['order_type'] == 'BUY' and user.available_funds < total_order_price:
+        raise BadRequestError("Not enough available funds for the operation")
 
-    if(data_obj['type'] == 'BUY'):
-        user = Users.where(id=data_obj['users_id']).first()
-        if(user.available_funds < data_obj['bid_price']):
-            raise BadRequestError("This user does not have enough available funds to bid on that stock")
+    if order_data['order_type'] == 'SELL':
+        try:
+            user_holding = Holding.where(user=user_id, stock=order_data['stock']).one()
+        except NoResultFound as ex:
+            raise BadRequestError("Not enough stocks in holding for the operation")
+        if user_holding.volume < order_data['bid_volume']:
+            raise BadRequestError("Not enough stocks in holding for the operation")
+        # check to see if user has enough stocks
 
-    if(data_obj['type'] == 'SELL'):
-        holding = Holdings.where(id=data_obj['stocks_id']).first()
-        if(holding.volume < data_obj['bid_volume']):
-            raise BadRequestError("This user does not have enough of that stock to sell for this bid volume")
+    order = Order.create(**order_data, user=user_id, executed_volume=0, status='OPEN')
+    new_available_funds = float(user.available_funds) - total_order_price
+    new_blocked_funds = float(user.blocked_funds) + total_order_price
+    user.update(available_funds=new_available_funds, blocked_funds=new_blocked_funds)
+    return OrderSchema().dump(order)
 
-    data_obj.update({'status': 'PENDING'})
-    data_obj.update({'executed_volume': 0})
-    data_obj.update({'created_at': datetime.datetime.now()})
+@leangle.describe.tags(["Order"])
+@leangle.describe.response(200, description='Stock', schema='OrderSchema')
+@orders_routes.route('/{id}', methods=['GET'], cors=True, authorizer=token_auth)
+def get_order(id):
+    user_id = orders_routes.current_request.context['authorizer']['principalId']
+    order = Order.find_or_fail(id)
+    if order.user != int(user_id):
+        raise UnauthorizedError("User is not allowed to access this note")
+    return OrderSchema().dump(order)
 
-    try:
-        order = Orders.create(**data_obj)
-    except exc.IntegrityError as ex:
-        raise BadRequestError(ex._message)
-
-    return {'status': 'Success', 'data': OrdersSchema().dump(order)}
-
-
-@leangle.describe.tags(["Orders"])
-@leangle.describe.parameter(name='body', _in='body', description='Get Order', schema='OrdersSchema')
-@leangle.describe.response(200, description='Order Retrieved', schema='OrdersSchema')
-@orders_routes.route('/{orders_id}', methods=['GET'], cors=True)
-def get_order(orders_id):
-    order = Orders.where(id=orders_id).first()
-    status = "Success"
-
-    if(order==None):
-        status="Order not found"
-
-    return {'status': status, 'data': OrdersSchema().dump(order)}
-
-
-@leangle.describe.tags(["Orders"])
-@leangle.describe.parameter(name='body', _in='body', description='Delete order', schema='OrdersSchema')
-@leangle.describe.response(200, description='Order Deleted', schema='OrdersSchema')
-@orders_routes.route('/{orders_id}', methods=['DELETE'], cors=True)
-def delete_order(orders_id):
-    order = Orders.where(id=orders_id).first()
-    status = "Success"
-
-    if(order==None):
-        status="Order not found"
-        return {'status': status, 'data': OrdersSchema().dump(order)}
-
-    order.delete()
-
-    return {'status': status, 'data': "Order Deleted!"}
+@leangle.describe.tags(["Order"])
+@leangle.describe.response(204, description='Order cancelled', schema='OrderSchema')
+@orders_routes.route('/{id}/cancel', methods=['DELETE'], cors=True, authorizer=token_auth )
+def cancel_order(id):
+    user_id = orders_routes.current_request.context['authorizer']['principalId']
+    order = Order.find_or_fail(id)
+    if order.user != int(user_id):
+        raise UnauthorizedError("User is not allowed to cancel this order")
+    order.update(status="CANCELLED")
+    reclaimed_funds = float(order.bid_price) * order.bid_volume
+    user = User.find_or_fail(user_id)
+    user.update(available_funds=user.available_funds+reclaimed_funds, blocked_funds=user.blocked_funds-reclaimed_funds)
+    return Response({}, status_code=204)
 
 
-@leangle.describe.tags(["Orders"])
-@leangle.describe.parameter(name='body', _in='body', description='Match orders', schema='OrdersSchema')
-@leangle.describe.response(200, description='Matched', schema='OrdersSchema')
-@orders_routes.route('/match', methods=['POST'], cors=True)
+def close_order(order: Order, trade_price):
+    # close the order:
+    order.update(status="CLOSED")
+    # remove funds from buyer:
+    buyer = User.find_or_fail(order.user)
+    funds_lost = order.bid_volume*float(trade_price)
+    buyer.update(blocked_funds = float(buyer.blocked_funds) - funds_lost)
+    # update holdings: # WHEN order_type == 'BUY'
+    buyer_holding = Holding.create(
+        user=buyer.id, 
+        stock=order.stock, 
+        volume=order.bid_volume,
+        bid_price=order.bid_price
+    )
+    # update OHLCV
+    market_day = MarketDay.where(status='OPEN').first()
+    ohlcv = OHLCV.where(market=market_day.id, stock=order.stock).first()
+    open = trade_price if ohlcv.open == -1 else ohlcv.open
+    high = trade_price if ohlcv.high < trade_price else ohlcv.high
+    low = trade_price if ohlcv.low > trade_price or ohlcv.low == -1 else ohlcv.low
+    ohlcv.update(
+        open=open,
+        high=high,
+        low=low,
+        close=trade_price,
+        volume=ohlcv.volume+order.bid_volume
+    )
+
+@leangle.describe.tags(["Order"])
+@leangle.describe.response(200, description='Orders matched')
+@orders_routes.route('/match', methods=['POST'], cors=True, authorizer=token_auth )
 def match_orders():
-    json_body = orders_routes.current_request.json_body
-    buy_orders = Orders.where(type="BUY").order_by(Orders.bid_price.desc())
-    #sell_orders = Orders.where(type="SELL").order_by(Orders.bid_price.asc())
+    days = MarketDay.all()
+    if len(days) == 0 or days[-1].status == 'CLOSED':
+        raise BadRequestError('Market is closed')
 
-    return OrdersSchema().dump(buy_orders)
+    def get_price(e: Order):
+        return e.bid_price
+    all_open_orders = Order.where(status="OPEN").all()
+    all_stock_ids = list(set(order.stock for order in all_open_orders))
+    for stock_id in all_stock_ids:
+        stock = Stock.find_or_fail(stock_id)
+        buy_orders = [order for order in all_open_orders if order.order_type == "BUY"]
+        sell_orders = [order for order in all_open_orders if order.order_type == "SELL"]
+        buy_orders.sort(reverse=True, key=get_price)
+        sell_orders.sort(key=get_price)
+        while (len(buy_orders) > 0 and ((len(sell_orders) > 0 and 
+                buy_orders[0].bid_price >= sell_orders[0].bid_price) or buy_orders[0].bid_price >= stock.price)):
+            # iterating thru buy orders from the largest bid to the cheapest
+            buy_order = buy_orders[0]
+            if len(sell_orders) > 0 and buy_order.bid_price >= sell_orders[0].bid_price: # trade happening with seller
+                sell_order = sell_orders[0]
+                trade_amount = min((buy_order.bid_volume - buy_order.executed_volume), (sell_order.bid_volume - sell_order.executed_volume))
+                buy_order.update(executed_volume = buy_order.executed_volume + trade_amount)
+                sell_order.update(executed_volume = sell_order.executed_volume + trade_amount)
+                trade_price = buy_order.bid_price if buy_order.created_at > sell_order.created_at else sell_order.bid_price
+                # one of them has executed_volume == bid_volume -> should be closed and the user's funds and holdings updated
+                if buy_order.executed_volume == buy_order.bid_volume:
+                    close_order(buy_order, trade_price)
+                    buy_orders.pop(0)
+                if sell_order.executed_volume == sell_order.bid_volume:
+                    close_order(sell_order, trade_price)
+                    sell_orders.pop(0)
+            elif buy_orders[0].bid_price >= stock.price: # trade happening directly with company
+                trade_amount = min(stock.unallocated, (buy_order.bid_volume - buy_order.executed_volume))
+                # move unallocated stocks to fulfill order
+                stock.update(unallocated=stock.unallocated-trade_amount, price=buy_order.bid_price)
+                buy_order.update(executed_volume=buy_order.executed_volume + trade_amount)
+                if buy_order.executed_volume == buy_order.bid_volume:
+                    close_order(buy_order, stock.price)
+                    buy_orders.pop(0)
+
+    return Response({}, status_code=200)
