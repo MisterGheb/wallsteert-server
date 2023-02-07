@@ -11,8 +11,10 @@ from chalice import Blueprint, BadRequestError, UnauthorizedError
 from sqlalchemy import desc
 import datetime
 
+
 from ..authorizer import token_auth
 from ..models.users import Users
+from ..models.holdings import Holdings
 from ..serializers.users import UsersSchema, SignupSchema
 from ..serializers.holdings import HoldingsSchema
 from ..constants import *
@@ -20,7 +22,6 @@ from ..constants import *
 auth_routes = Blueprint('auth')
 users_routes = Blueprint('users')
 logger = logging.getLogger(__name__)
-
 
 
 @leangle.describe.tags(["Users"])
@@ -43,11 +44,7 @@ def register_user():
         raise BadRequestError(f"User with email {user_data['email']} already exists")
     user = Users.create(**user_data, token=binascii.hexlify(os.urandom(20)).decode(), available_funds=400000, blocked_funds=0)
 
-    holdings_id = Holdings.order_by(id.desc()).first().id + 1
-    holdings = {"id": holdings_id, "volume": 0, "bid_price": 0, "bought_on": datetime.datetime().now(),
-    "users_id": user.id, "stocks_id": None}
-
-    return {'status': "Successful signup!", 'data': {}}
+    return {'id': user.id}
 
 
 @leangle.describe.tags(["Users"])
@@ -65,8 +62,7 @@ def login_user():
     if not bcrypt.checkpw(json_body['password'].encode('utf-8'), user.password.encode('utf-8')):
         raise UnauthorizedError(f"Username and password doesn't match")
 
-    user = Users.where(loggedIn=True).first()
-    if(user!=None):
+    if(user.loggedIn):
         raise BadRequestError(f"A User is already logged in")
 
     user.update(token=binascii.hexlify(os.urandom(20)).decode())

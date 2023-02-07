@@ -8,8 +8,8 @@ class UsersSchema(Schema):
     email = fields.String(required=True)
     available_funds = fields.Number(dump_only=True)
     blocked_funds = fields.Number(dump_only=True)
-    token = fields.String()
-    loggedIn = fields.Bool()
+    token = fields.String(dump_only=True)
+    #loggedIn = fields.Bool(dump_only=True)
     
     class Meta:
         unknown = EXCLUDE

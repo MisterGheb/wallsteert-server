@@ -33,7 +33,7 @@ def list_stocks():
 @leangle.describe.tags(["Stocks"])
 @leangle.describe.parameter(name='body', _in='body', description='Create a stock in the market', schema='StocksSchema')
 @leangle.describe.response(200, description='Stock Created', schema='StocksSchema')
-@stocks_routes.route('/', methods=['POST'], cors=True)
+@stocks_routes.route('/', methods=['POST'], cors=True, authorizer=token_auth)
 def create_stock():
     json_body = stocks_routes.current_request.json_body
 

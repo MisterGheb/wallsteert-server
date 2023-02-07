@@ -8,7 +8,7 @@ class StocksSchema(Schema):
     total_volume = fields.Integer(required=True)
     unallocated = fields.Integer(required=True)
     price = fields.Number(required=True)
-    sector_id = fields.Integer(required=True)
+    sectors_id = fields.Integer(required=True)
     
     class Meta:
         unknown = EXCLUDE

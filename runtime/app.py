@@ -10,6 +10,9 @@ from aws_lambda_powertools import Tracer
 from chalicelib.api.orders import orders_routes
 from chalicelib.api.stocks import stocks_routes
 from chalicelib.api.sectors import sectors_routes
+from chalicelib.api.holdings import holdings_routes
+from chalicelib.api.users import users_routes
+from chalicelib.api.users import auth_routes
 from chalicelib.api.market_day import market_day_routes
 
 if 'LAMBDA_TASK_ROOT' in os.environ:
@@ -35,10 +38,13 @@ app.register_middleware(ConvertToMiddleware(tracer.capture_lambda_handler))
 
 
 app.register_blueprint(auth_blueprint)
-app.register_blueprint(auth_routes, url_prefix='/auth')
+app.register_blueprint(auth_routes, url_prefix='/api/v1/auth')
 app.register_blueprint(orders_routes, url_prefix='/api/v1/orders')
 app.register_blueprint(sectors_routes, url_prefix='/api/v1/sectors')
 app.register_blueprint(market_day_routes, url_prefix='/api/v1/market')
+app.register_blueprint(stocks_routes, url_prefix='/api/v1/stocks')
+app.register_blueprint(holdings_routes, url_prefix='/api/v1/holdings')
+app.register_blueprint(users_routes, url_prefix='/api/v1/users')
 app.log.setLevel(logging.DEBUG)
 
 if os.getenv('RUN_MIGRATE', 'True') == 'True':
