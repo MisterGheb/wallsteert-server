@@ -4,6 +4,7 @@ from chalice import Blueprint, BadRequestError, UnauthorizedError, Response
 from sqlalchemy.exc import NoResultFound
 from datetime import datetime
 from datetime import timezone
+import time
 
 from ..authorizer import token_auth
 from ..models.orders import Orders as Order
@@ -22,7 +23,7 @@ logger = logging.getLogger(__name__)
 @orders_routes.route('/', methods=['GET'], cors=True,  authorizer=token_auth)
 def list_orders():
     user_id = orders_routes.current_request.context['authorizer']['principalId']
-    all_orders = Order.where(user=user_id).all()
+    all_orders = Order.where(users_id=user_id).all()
     return OrderSchema().dump(all_orders, many=True)
 
 @leangle.describe.tags(["Order"])
@@ -47,15 +48,9 @@ def create_order():
         if user_holding.volume < order_data['bid_volume']:
             raise BadRequestError("Not enough stocks in holding for the operation")
         # check to see if user has enough stocks
-    
-    birthday = "23.02.2021 09:12:00"
-
-    # convert to datetime
-    date_time = datetime.strptime(birthday, '%d.%m.%Y %H:%M:%S')
-
-    # get UTC timestamp
-    
-    order = Order.create(**order_data, users_id=user_id, executed_volume=0, status='OPEN')
+    timestamp = time.time()
+    dt_object = datetime.fromtimestamp(timestamp)
+    order = Order.create(**order_data, users_id=user_id, executed_volume=0, status='OPEN',created_at=dt_object,updated_at=dt_object)
     new_available_funds = float(user.available_funds) - total_order_price
     new_blocked_funds = float(user.blocked_funds) + total_order_price
     user.update(available_funds=new_available_funds, blocked_funds=new_blocked_funds)
