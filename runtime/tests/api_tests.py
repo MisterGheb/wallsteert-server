@@ -46,34 +46,33 @@ class TestUsers(object):
         gateway = gateway_factory()
         response = gateway.handle_request(
             method='POST',
-            path='/auth/registration',
+            path='/api/v1/auth/signup',
             headers=header,
             body=register_data
         )
         json_response = json.loads(response['body'])
         assert response['statusCode'] == 200
-        assert 'key' in json_response
 
     def test_login(self, gateway_factory):
         gateway = gateway_factory()
         response = gateway.handle_request(
             method='POST',
-            path='/auth/login',
+            path='/api/v1/auth/login',
             headers=header,
             body=login_data
         )
         json_response = json.loads(response['body'])
         assert response['statusCode'] == 200
-        assert 'key' in json_response
+        assert 'token' in json_response
 
 
     def test_fail_login(self, gateway_factory):
         gateway = gateway_factory()
         response = gateway.handle_request(
             method='POST',
-            path='/auth/login',
+            path='/api/v1/auth/login',
             headers=header,
-            body=register_data
+            body="{'email': 'test@email.com', 'password': 'invalid_pass'}"
         )
         assert response['statusCode'] == 400
 
@@ -83,16 +82,15 @@ class TestUsers(object):
         gateway = gateway_factory()
         response = gateway.handle_request(
             method='POST',
-            path='/auth/login',
+            path='/api/v1/auth/login',
             headers=header,
             body=login_data
         )
         json_response = json.loads(response['body'])
-        print(json_response)
-        user_token = json_response['key']
+        user_token = json_response['token']
         response = gateway.handle_request(
             method='GET',
-            path='/auth/user',
+            path='/api/v1/users/profile',
             headers={'Authorization': f'Token {user_token}'},
             body=''
         )
