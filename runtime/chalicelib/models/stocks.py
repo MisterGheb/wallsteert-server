@@ -16,6 +16,3 @@ class Stocks(BaseModel):
     price = Column(Numeric(12,2), nullable=False)
     sectors_id = Column(Integer, ForeignKey("sectors.id"))
 
-    ohlcv = relationship('Ohlcv')
-    orders = relationship('Orders')
-    holdings = relationship('Holdings')

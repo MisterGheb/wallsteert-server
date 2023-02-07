@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey
 
 from .base import BaseModel
+from .ohlcv import Ohlcv
 from ..constants import CONST_STRING_LENGTH, CONST_TOKEN_LENGTH
 
 class Market_day(BaseModel):
@@ -13,7 +14,7 @@ class Market_day(BaseModel):
     status = Column(String(10), nullable=False)
 
     ohlcv = relationship('Ohlcv')
-
+    
 
 
 

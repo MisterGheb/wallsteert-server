@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey
 
 from .base import BaseModel
+from .stocks import Stocks
 from ..constants import CONST_STRING_LENGTH, CONST_TOKEN_LENGTH
 
 

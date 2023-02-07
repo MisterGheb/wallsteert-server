@@ -38,7 +38,7 @@ app.register_blueprint(auth_blueprint)
 app.register_blueprint(auth_routes, url_prefix='/auth')
 app.register_blueprint(orders_routes, url_prefix='/api/v1/orders')
 app.register_blueprint(sectors_routes, url_prefix='/api/v1/sectors')
-app.register_blueprint(market_day_routes, url_prefix='/api/v1/market_day')
+app.register_blueprint(market_day_routes, url_prefix='/api/v1/market')
 app.log.setLevel(logging.DEBUG)
 
 if os.getenv('RUN_MIGRATE', 'True') == 'True':

@@ -14,5 +14,5 @@ class Users(BaseModel):
     blocked_funds = Column(Numeric(12,2), nullable=False)
     password = Column(String(64))
 
-    orders = relationship('Orders')
-    holdings = relationship('Holdings')
+
+    #holdings = relationship('Users', back_populates='holdings')

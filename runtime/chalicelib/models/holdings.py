@@ -1,7 +1,9 @@
 from sqlalchemy import Column, String, Integer, Numeric, TIMESTAMP, Date, ForeignKey
 from sqlalchemy.orm import relationship
 
+
 from .base import BaseModel
+from .users import Users
 from ..constants import CONST_STRING_LENGTH, CONST_TOKEN_LENGTH
 
 
@@ -15,4 +17,4 @@ class Holdings(BaseModel):
     users_id = Column(Integer, ForeignKey("users.id"))
     stocks_id = Column(Integer, ForeignKey("stocks.id"))
 
-    
+    users = relationship('Users')
