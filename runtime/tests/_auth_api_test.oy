@@ -3,30 +3,9 @@ import pytest
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from app import app
 
-register_data = json.dumps({
-    "email": "vaibhav.goyal@trilogy.com",
-    "password1": "pass"
-})
-login_data = json.dumps({
-    "email": "vaibhav.goyal@trilogy.com",
-    "password": "pass"
-})
+from .fixtures import header, gateway_factory, user_token, login_data, register_data
 
-
-header = {'Content-Type': 'application/json'}
-
-@pytest.fixture
-def gateway_factory():
-    from chalice.config import Config
-    from chalice.local import LocalGateway
-
-    def create_gateway(config=None):
-        if config is None:
-            config = Config()
-        return LocalGateway(app, config)
-    return create_gateway
 
 
 class TestUsers(object):
@@ -76,18 +55,18 @@ class TestUsers(object):
         )
         assert response['statusCode'] == 400
 
-
-
-    def test_authorize_user(self, gateway_factory):
+    def test_fail_login(self, gateway_factory):
         gateway = gateway_factory()
         response = gateway.handle_request(
             method='POST',
             path='/api/v1/auth/login',
             headers=header,
-            body=login_data
+            body="{'email': 'test@email.com', 'password': 'invalid_pass'}"
         )
-        json_response = json.loads(response['body'])
-        user_token = json_response['token']
+        assert response['statusCode'] == 400
+
+    def test_authorize_user(self, gateway_factory, user_token):
+        gateway = gateway_factory()
         response = gateway.handle_request(
             method='GET',
             path='/api/v1/users/profile',
