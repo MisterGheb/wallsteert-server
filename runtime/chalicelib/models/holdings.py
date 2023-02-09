@@ -18,3 +18,4 @@ class Holdings(BaseModel):
     stocks_id = Column(Integer, ForeignKey("stocks.id"))
 
     users = relationship('Users')
+    stocks = relationship("Stocks")
