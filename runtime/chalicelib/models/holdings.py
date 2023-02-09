@@ -11,8 +11,8 @@ class Holdings(BaseModel):
     __tablename__ = 'holdings'
     
     id = Column(Integer, primary_key=True)
-    volume = Column(Numeric(12,2), nullable=False)
-    bid_price = Column(String(4), nullable=False)
+    volume = Column(Integer(), nullable=False)
+    bid_price = Column(Numeric(12,2), nullable=False)
     bought_on = Column(Date, nullable=False)
     users_id = Column(Integer, ForeignKey("users.id"))
     stocks_id = Column(Integer, ForeignKey("stocks.id"))

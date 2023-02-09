@@ -16,8 +16,8 @@ def initialize_ohlcv(market_day_id):
     all_stocks = Stock.all()
     for stock in all_stocks:
         OHLCV.create(
-            market=market_day_id,
-            stock=stock.id,
+            market_id=market_day_id,
+            stock_id=stock.id,
             open=-1,
             high=-1,
             low=-1,

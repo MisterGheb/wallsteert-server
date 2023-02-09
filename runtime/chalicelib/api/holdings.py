@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 @holdings_routes.route('/', methods=['GET'], cors=True)
 def list_holdings():
     json_body = holdings_routes.current_request.json_body
-    holdings = Holdings.all()
+    holdings = Holdings.query.all()
 
-    return HoldingsSchema().dump(holdings)
+    return HoldingsSchema().dump(holdings,many=True)
+
+
