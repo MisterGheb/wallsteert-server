@@ -3,118 +3,95 @@ import requests
 import random
 import string
 import os
+import re
 import binascii
 import leangle
 import bcrypt
 from chalice import Blueprint, BadRequestError, UnauthorizedError
+from sqlalchemy import desc
+import datetime
+
 
 from ..authorizer import token_auth
 from ..models.users import Users
-from ..serializers.users import UsersSchema
+from ..models.holdings import Holdings
+from ..serializers.users import UsersSchema, SignupSchema
+from ..serializers.holdings import HoldingsSchema
 from ..constants import *
 
 auth_routes = Blueprint('auth')
+users_routes = Blueprint('users')
 logger = logging.getLogger(__name__)
 
-@leangle.describe.tags(["Auth"])
-@leangle.describe.parameter(name='body', _in='body', description='Create a new User', schema='RegisterUserSchema')
-@leangle.describe.response(200, description='Created', schema='UserSchema')
-@auth_routes.route('/registration', methods=['POST'], cors=True)
+
+@leangle.describe.tags(["Users"])
+@leangle.describe.parameter(name='body', _in='body', description='Create new user', schema='SignupSchema')
+@leangle.describe.response(200, description='User Signed up', schema='SignupSchema')
+@auth_routes.route('/signup', methods=['POST'], cors=True)
 def register_user():
     json_body = auth_routes.current_request.json_body
-    if json_body.get('email') is None or json_body.get('password1') is None:
-        raise BadRequestError(f"Password or email doesn't exists")
+    regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
+    if(not re.fullmatch(regex, json_body.get('email'))):
+        raise BadRequestError("Email format is incorrect!")
+    if json_body.get('email') is None or json_body.get('password') is None:
+        raise BadRequestError("Password or email doesn't exists")
     if json_body.get('username') is None:
-        json_body['username'] = json_body['email']
-    json_body['password'] = bcrypt.hashpw(json_body['password1'].encode('utf-8'), bcrypt.gensalt())
+        json_body['username'] = json_body['email'].split('@')[0]
+    json_body['password'] = bcrypt.hashpw(json_body['password'].encode('utf-8'), bcrypt.gensalt())
 
-    user_data = UserSchema().load(json_body)
-    if User.where(email=user_data['email']).first() is not None:
+    user_data = SignupSchema().load(json_body)
+    if Users.where(email=user_data['email']).first() is not None:
         raise BadRequestError(f"User with email {user_data['email']} already exists")
-    user = User.create(**user_data, token=binascii.hexlify(os.urandom(20)).decode())
-    return UserSchema().dump(user)
+    user = Users.create(**user_data, token=binascii.hexlify(os.urandom(20)).decode(), available_funds=400000, blocked_funds=0)
 
-@leangle.describe.tags(["Auth"])
-@leangle.describe.parameter(name='body', _in='body', description='Login User', schema='LoginUserSchema')
-@leangle.describe.response(200, description='User Details', schema='UserSchema')
-@auth_routes.route('/login', methods=['POST'], cors=True, content_types=['application/json; charset=utf-8', 'application/json', 'application/x-www-form-urlencoded'])
+    return {'id': user.id}
+
+
+@leangle.describe.tags(["Users"])
+@leangle.describe.parameter(name='body', _in='body', description='User Login', schema='LoginSchema')
+@leangle.describe.response(200, description='User Logged in', schema='LoginSchema')
+@auth_routes.route('/login', methods=['POST'], cors=True)
 def login_user():
     json_body = auth_routes.current_request.json_body
     if json_body.get('email') is None or json_body.get('password') is None:
         raise BadRequestError(f"Password or email doesn't exists")
-    user = User.where(email=json_body['email']).first()
+    user = Users.where(email=json_body['email']).first()
     if user is None:
         raise BadRequestError(f"User with email {json_body['email']} doesn't exists")
-    
+
     if not bcrypt.checkpw(json_body['password'].encode('utf-8'), user.password.encode('utf-8')):
         raise UnauthorizedError(f"Username and password doesn't match")
-    return UserSchema().dump(user)
 
-@leangle.describe.tags(["Auth"])
-@leangle.describe.response(200, description='User Details', schema='UserSchema')
-@auth_routes.route('/user', methods=['GET'], cors=True, authorizer=token_auth)
-def authorize_user():
+    if(user.loggedIn):
+        raise BadRequestError(f"A User is already logged in")
+
+    user.update(token=binascii.hexlify(os.urandom(20)).decode())
+    user.update(loggedIn=True)
+    return {'status': "User logged in", 'data': user.token}
+
+
+@leangle.describe.tags(["Users"])
+@leangle.describe.parameter(name='body', _in='body', description='User Logout', schema='LoginSchema')
+@leangle.describe.response(200, description='User Loggedp out', schema='LoginSchema')
+@auth_routes.route('/logout', methods=['POST'], cors=True)
+def logout_user():
     user_id = auth_routes.current_request.context['authorizer']['principalId']
-    user = User.find_or_fail(user_id)
-    return UserSchema().dump(user)
+    user = Users.find_or_fail(user_id)
+    user.update(token=None)
+    user.update(loggedIn=False)
+    return {'status': "User logged out", 'data': {}}
 
-@leangle.describe.tags(["Auth"])
-@leangle.describe.parameter(name='body', _in='body', description='Login User using dev-connect', schema='DevConnectSchema')
-@leangle.describe.response(200, description='User Details', schema='UserSchema')
-@auth_routes.route('/login/social/token/devconnect', methods=['POST'], cors=True)
-def devconnect_login():
-    url = DEVCONNECT_ISSUER_URL.rstrip("/") + "/protocol/openid-connect/token/"
 
-    if auth_routes.current_request.json_body is None or auth_routes.current_request.json_body.get('code') is None:
-        raise BadRequestError("Code Not Found")
-    code = auth_routes.current_request.json_body.get('code')
+@leangle.describe.tags(["Users"])
+@leangle.describe.parameter(name='body', _in='body', description='User Profile', schema='UserSchema')
+@leangle.describe.response(200, description='User Profile', schema='UserSchema')
+@users_routes.route('/profile', methods=['GET'], cors=True)
+def user_profile():
+    user = Users.where(loggedIn=True).first()
+    status= "Success"
+    if(user==None):
+        status = "No user currently logged in!"
+        return {'status': status, 'data': {}}
 
-    if auth_routes.current_request.json_body.get('redirect_uri') is None:
-        raise BadRequestError("Redirect URI Not Found")
-    redirect_uri = auth_routes.current_request.json_body.get('redirect_uri')
-
-    header = {
-        'Content-Type': 'application/x-www-form-urlencoded',
-    }
-    post_data = {
-        'client_id': DEVCONNECT_CLIENT_ID,
-        'client_secret': DEVCONNECT_CLIENT_SECRET,
-        'grant_type': 'authorization_code',
-        'code': code,
-        'redirect_uri': redirect_uri
-    }
-    response = requests.post(url, data=post_data, headers=header)
-
-    if response.status_code != 200:
-        logger.error(f"Unable to fetch Credentials using the provided Code")
-        raise BadRequestError("Unable to fetch Credentials using the provided Code")
-    
-    body = response.json()
-    logger.info(f"Auth Response Fetched")
-    id_token = body['access_token']
-    url = DEVCONNECT_ISSUER_URL.rstrip("/") + "/protocol/openid-connect/userinfo/"
-    header = {
-        'Authorization': 'Bearer ' + id_token
-    }
-    response = requests.get(url, headers=header)
-
-    if response.status_code != 200:
-        logger.error(f"Unable to fetch User Info from DevConnect")
-        raise BadRequestError("Unable to fetch User Info from DevConnect")
-    
-    details = response.json()
-    logger.info(f"User Info {details}")
-    user = User.where(username=details['preferred_username']).first()
-    if user is None:
-        user = User.create(
-            email = details['email'],
-            username = details['preferred_username'],
-            password = ''.join(random.choices(string.ascii_lowercase + string.digits, k=12)),
-            first_name = details['given_name'],
-            last_name = details['family_name'],
-            ad_username = details['preferred_username'],
-            token = binascii.hexlify(os.urandom(20)).decode()
-        )
-    return UserSchema().dump(user)
-
+    return {'status': status, 'data': UsersSchema().dump(user)}
 

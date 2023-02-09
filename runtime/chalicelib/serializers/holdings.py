@@ -5,8 +5,8 @@ from marshmallow import Schema, fields, EXCLUDE
 class HoldingsSchema(Schema):
     id = fields.Integer(dump_only=False)
     volume = fields.Number()
-    bid_price = fields.DateTime()
-    bought_on = fields.Integer()
+    bid_price = fields.Integer()
+    bought_on = fields.DateTime()
     user_id = fields.Integer(dump_only=False)
     stock_id = fields.Integer(dump_only=False)
     
