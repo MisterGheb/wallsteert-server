@@ -3,7 +3,6 @@ import leangle
 from chalice import Blueprint, Response, BadRequestError
 from sqlalchemy.exc import NoResultFound
 
-
 from ..authorizer import token_auth
 from ..models.market_day import Market_day as MarketDay
 from ..models.ohlcv import Ohlcv as OHLCV
@@ -24,6 +23,7 @@ def initialize_ohlcv(market_day_id):
             close=-1,
             volume=0
         )
+    print("ohlcv successfully created")
 
 @leangle.describe.tags(["Market"])
 @leangle.describe.response(204, description='Market open')
@@ -31,14 +31,17 @@ def initialize_ohlcv(market_day_id):
 def open_market():
     all_days = MarketDay.all()
     if len(all_days) > 0 and all_days[-1].status == "OPEN":
+        print("length of days is greater than 0")
         raise BadRequestError("Current day must be closed to open a new day")
     if len(all_days) == 0:
+        print("length of days is 0")
         new_day = MarketDay.create(day=0, status='OPEN')
     else:
+        print("its closed so ok")
         last_day = all_days[-1]
         new_day = MarketDay.create(day=(last_day.day+1), status='OPEN')
     initialize_ohlcv(new_day.id)
-    return Response({}, status_code=204)
+    return Response({"data": "Market is now open"}, status_code=204)
 
 @leangle.describe.tags(["Market"])
 @leangle.describe.response(204, description='Market closed')
@@ -64,13 +67,13 @@ def get_ohlcv():
         day = MarketDay.where(day=day_num).one()
     except NoResultFound as ex:
         raise BadRequestError("Day does not exist")
-    ohlcvs = OHLCV.where(market=day.id).all()
+    ohlcvs = OHLCV.where(market_id=day.id).all()
     return_list = []
     for ohlcv in ohlcvs:
-        market_day = MarketDay.find_or_fail(ohlcv.market)
+        market_day = MarketDay.find_or_fail(ohlcv.market_id)
         obj = {
             'day': market_day.day,
-            'stock': ohlcv.stock,
+            'stock': ohlcv.stocks_id,
             'open': ohlcv.open,
             'high': ohlcv.high,
             'low': ohlcv.low,

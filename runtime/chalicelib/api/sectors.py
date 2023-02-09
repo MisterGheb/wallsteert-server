@@ -28,7 +28,7 @@ def list_sectors():
     if(sectors==[]):
         status="No orders in the system"
 
-    return {'status': status, 'data': SectorsSchema(many=True).dump(sectors)}
+    return  SectorsSchema(many=True).dump(sectors)
 
 
 @leangle.describe.tags(["Sectors"])
@@ -49,7 +49,7 @@ def create_sector():
     except exc.IntegrityError as ex:
         raise BadRequestError(ex._message)
 
-    return {'status': 'Success', 'data': SectorsSchema().dump(sector)}
+    return SectorsSchema().dump(sector)
 
 
 @leangle.describe.tags(["Sectors"])
@@ -61,7 +61,7 @@ def get_sector(sector_id):
     status = "Success"
     if(sector == None):
         status = "Sector not Found!"
-    return {'status': status, 'data': SectorsSchema().dump(sector)}
+    return SectorsSchema().dump(sector)
 
 
 @leangle.describe.tags(["Sectors"])
@@ -74,7 +74,7 @@ def get_sector(sector_id):
     status = "Success"
     if(sector == None):
         status = "Sector not Found!"
-        return {'status': status, 'data': SectorsSchema().dump(sector)}
+        return SectorsSchema().dump(sector)
 
     try:
         data_obj = SectorsSchema().load(json_body)
@@ -87,4 +87,4 @@ def get_sector(sector_id):
         sector.update(name = json_body['name'])
     if 'description' in json_body:
         sector.update(description = json_body['description'])
-    return {'status': status, 'data': SectorsSchema().dump(sector)}
+    return SectorsSchema().dump(sector)
