@@ -9,9 +9,9 @@ login_data = json.dumps({
     "password": "pass"
 })
 register_data = json.dumps({
-    "email": "jay_vee@trilogy.com",
-    "password": "pass",
-    "username": "jayvee"
+    "email": "minagheb@trilogy.com",
+    "password": "1234",
+    "username": "Mina"
 })
 
 @pytest.fixture
@@ -36,7 +36,6 @@ def user_token(gateway_factory):
         body=login_data
     )
     json_response = json.loads(response['body'])
-    print(json_response)
     token = json_response['token']
     return token
 
@@ -50,7 +49,7 @@ def sector_id(gateway_factory):
         body=''
     )
     json_response = json.loads(response['body'])
-    return json_response['data'][0]['id']
+    return json_response[0]['id']
 
 @pytest.fixture
 def stock_id(gateway_factory):
@@ -62,7 +61,7 @@ def stock_id(gateway_factory):
         body=''
     )
     json_response = json.loads(response['body'])
-    return json_response['data'][0]['id']
+    return json_response[0]['id']
 
 @pytest.fixture
 def order_id(gateway_factory, user_token):
@@ -74,14 +73,14 @@ def order_id(gateway_factory, user_token):
         body=''
     )
     json_response = json.loads(response['body'])
-    return json_response['data'][0]['id']
+    return json_response[0]['id']
 
 @pytest.fixture
 def order(gateway_factory, user_token, stock_id):
     gateway = gateway_factory()
     data = {
-        "stock": stock_id,
-        "order_type": "BUY",
+        "stocks_id": stock_id,
+        "type": "BUY",
         "bid_price": "400.00",
         "bid_volume": 100
     }

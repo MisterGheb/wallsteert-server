@@ -73,4 +73,4 @@ class TestUsers(object):
             headers={'Authorization': f'Token {user_token}'},
             body=''
         )
-        assert response['statusCode'] == 200
+        assert response['statusCode'] == 204
