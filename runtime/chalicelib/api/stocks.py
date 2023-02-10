@@ -27,7 +27,7 @@ def list_stocks():
     status = "Success"
     if(stocks==[]):
         status="No stocks in the system"
-    return {'status': status, 'data': StocksSchema(many=True).dump(stocks)}
+    return StocksSchema(many=True).dump(stocks)
 
 
 @leangle.describe.tags(["Stocks"])
@@ -45,11 +45,25 @@ def create_stock():
         raise BadRequestError(ex)
 
     try:
-        stock = Stocks.create(**data_obj)
+        stock = Stocks.create(
+            name = data_obj["name"],
+            price = data_obj["price"],
+            sectors_id = data_obj["sector"],
+            unallocated = data_obj["unallocated"],
+            total_volume = data_obj["total_volume"] 
+        )
+        
     except exc.IntegrityError as ex:
         raise BadRequestError(ex._message())
 
-    return {'status': 'Success', 'data': StocksSchema().dump(stock)}
+    return { 
+            "id": stock.id,          
+            "name": stock.name,
+            "price":stock.price,
+            "sector":stock.sectors_id,
+            "unallocated": stock.unallocated,
+            "total_volume": stock.total_volume 
+            }
 
 
 @leangle.describe.tags(["Stocks"])
@@ -61,4 +75,13 @@ def get_stock(stock_id):
     status = "Success"
     if(stock == None):
         status = "Stock not Found!"
-    return {'status': status, 'data': StocksSchema().dump(stock)}
+
+        
+    return { 
+            "id": stock.id,          
+            "name": stock.name,
+            "price":stock.price,
+            "sector":stock.sectors_id,
+            "unallocated": stock.unallocated,
+            "total_volume": stock.total_volume 
+            }

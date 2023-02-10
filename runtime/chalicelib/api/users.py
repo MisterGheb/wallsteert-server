@@ -7,7 +7,7 @@ import re
 import binascii
 import leangle
 import bcrypt
-from chalice import Blueprint, BadRequestError, UnauthorizedError
+from chalice import Blueprint, BadRequestError, UnauthorizedError, Response
 from sqlalchemy import desc
 import datetime
 
@@ -62,24 +62,22 @@ def login_user():
     if not bcrypt.checkpw(json_body['password'].encode('utf-8'), user.password.encode('utf-8')):
         raise UnauthorizedError(f"Username and password doesn't match")
 
-    if(user.loggedIn):
-        raise BadRequestError(f"A User is already logged in")
 
     user.update(token=binascii.hexlify(os.urandom(20)).decode())
     user.update(loggedIn=True)
-    return {'status': "User logged in", 'data': user.token}
+    return {'token':user.token}
 
 
 @leangle.describe.tags(["Users"])
 @leangle.describe.parameter(name='body', _in='body', description='User Logout', schema='LoginSchema')
-@leangle.describe.response(200, description='User Loggedp out', schema='LoginSchema')
-@auth_routes.route('/logout', methods=['POST'], cors=True)
+@leangle.describe.response(204, description='User Loggedp out', schema='LoginSchema')
+@auth_routes.route('/logout', methods=['POST'], cors=True,authorizer=token_auth)
 def logout_user():
     user_id = auth_routes.current_request.context['authorizer']['principalId']
     user = Users.find_or_fail(user_id)
     user.update(token=None)
     user.update(loggedIn=False)
-    return {'status': "User logged out", 'data': {}}
+    return Response("" ,status_code=204)
 
 
 @leangle.describe.tags(["Users"])
@@ -93,5 +91,12 @@ def user_profile():
         status = "No user currently logged in!"
         return {'status': status, 'data': {}}
 
-    return {'status': status, 'data': UsersSchema().dump(user)}
+    #return {UsersSchema().dump(user)}
+    return {
+            "id": user.id,
+            "name": user.username,
+            "email": user.email,
+            "blocked_funds": user.blocked_funds,
+            "available_funds": user.available_funds
+            }
 

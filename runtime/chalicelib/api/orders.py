@@ -43,7 +43,7 @@ def create_order():
 
     if order_data['type'] == 'SELL':
         try:
-            user_holding = Holding.where(users_id=user_id, stocks_id=order_data['stocks_id']).one()
+            user_holding = Holding.where(users_id=user_id, stocks_id=order_data['stocks_id']).first()
         except NoResultFound as ex:
             raise BadRequestError("Not enough stocks in holding for the operation")
         if user_holding.volume < order_data['bid_volume']:
@@ -97,9 +97,12 @@ def close_order(order: Order, trade_price):
         bid_price=order.bid_price,
         bought_on=date.today()
     )
+
+    # close the order:
+    order.update(status="CLOSED")
     # update OHLCV
     market_day = MarketDay.where(status='OPEN').first()
-    ohlcv = OHLCV.where(market=market_day.id, stock=order.stock).first()
+    ohlcv = OHLCV.where(market_id=market_day.id, stocks_id=order.stocks_id).first()
     open = trade_price if ohlcv.open == -1 else ohlcv.open
     high = trade_price if ohlcv.high < trade_price else ohlcv.high
     low = trade_price if ohlcv.low > trade_price or ohlcv.low == -1 else ohlcv.low
