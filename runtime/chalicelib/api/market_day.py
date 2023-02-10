@@ -59,10 +59,10 @@ def close_market():
 @market_day_routes.route('/ohlcv', methods=['GET'], cors=True)
 def get_ohlcv():
     if not market_day_routes.current_request.query_params:
-        raise BadRequestError("Missing required 'day' parameter")
+        raise BadRequestError("Missing required 'day' parameter 1")
     day_num = market_day_routes.current_request.query_params.get('day', None)
     if not day_num:
-        raise BadRequestError("Missing required 'day' parameter")
+        raise BadRequestError("Missing required 'day' parameter 2")
     try:
         day = MarketDay.where(day=day_num).one()
     except NoResultFound as ex:
