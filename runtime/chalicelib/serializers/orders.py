@@ -11,8 +11,8 @@ class OrdersSchema(Schema):
     status = fields.String(dump_only=True)
     bid_volume = fields.Integer(required=True)
     executed_volume = fields.Integer(dump_only=True)
-    user_id = fields.Integer(dump_only=True)
-    stocks_id = fields.Integer(required=True)
+    user = fields.Integer(dump_only=True)
+    stock = fields.Integer(required=True)
   
     
     class Meta:

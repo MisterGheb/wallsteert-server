@@ -29,19 +29,21 @@ logger = logging.getLogger(__name__)
 @leangle.describe.response(200, description='User Signed up', schema='SignupSchema')
 @auth_routes.route('/signup', methods=['POST'], cors=True)
 def register_user():
+    
     json_body = auth_routes.current_request.json_body
+    
     regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
     if(not re.fullmatch(regex, json_body.get('email'))):
-        raise BadRequestError("Email format is incorrect!")
+        return Response("", status_code=400)
     if json_body.get('email') is None or json_body.get('password') is None:
-        raise BadRequestError("Password or email doesn't exists")
+        return Response("", status_code=400)
     if json_body.get('username') is None:
         json_body['username'] = json_body['email'].split('@')[0]
     json_body['password'] = bcrypt.hashpw(json_body['password'].encode('utf-8'), bcrypt.gensalt())
 
     user_data = SignupSchema().load(json_body)
     if Users.where(email=user_data['email']).first() is not None:
-        raise BadRequestError(f"User with email {user_data['email']} already exists")
+        return Response("", status_code=400)
     user = Users.create(**user_data, token=binascii.hexlify(os.urandom(20)).decode(), available_funds=400000, blocked_funds=0)
 
     return {'id': user.id}
@@ -54,13 +56,13 @@ def register_user():
 def login_user():
     json_body = auth_routes.current_request.json_body
     if json_body.get('email') is None or json_body.get('password') is None:
-        raise BadRequestError(f"Password or email doesn't exists")
+        return Response("", status_code=400)
     user = Users.where(email=json_body['email']).first()
     if user is None:
-        raise BadRequestError(f"User with email {json_body['email']} doesn't exists")
+        return Response("", status_code=400)
 
     if not bcrypt.checkpw(json_body['password'].encode('utf-8'), user.password.encode('utf-8')):
-        raise UnauthorizedError(f"Username and password doesn't match")
+        return Response("", status_code=401)
 
 
     user.update(token=binascii.hexlify(os.urandom(20)).decode())
@@ -97,6 +99,6 @@ def user_profile():
             "name": user.username,
             "email": user.email,
             "blocked_funds": user.blocked_funds,
-            "available_funds": user.available_funds
+            "available_funds": str(round(user.available_funds,2))
             }
 

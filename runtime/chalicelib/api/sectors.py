@@ -40,14 +40,14 @@ def create_sector():
     try:
         data_obj = SectorsSchema().load(json_body)
     except TypeError as ex:
-        raise BadRequestError(ex)
+        return Response("", status_code=400)
     except exceptions.ValidationError as ex:
-        raise BadRequestError(ex)
+        return Response("", status_code=400)
 
     try:
         sector = Sectors.create(**data_obj)
     except exc.IntegrityError as ex:
-        raise BadRequestError(ex._message)
+        return Response("", status_code=400)
 
     return SectorsSchema().dump(sector)
 
@@ -79,9 +79,9 @@ def get_sector(sector_id):
     try:
         data_obj = SectorsSchema().load(json_body)
     except TypeError as ex:
-        raise BadRequestError(ex)
+        return Response("", status_code=400)
     except exceptions.ValidationError as ex:
-        raise BadRequestError(ex)
+        return Response("", status_code=400)
     
     if 'name' in json_body:
         sector.update(name = json_body['name'])

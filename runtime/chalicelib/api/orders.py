@@ -32,7 +32,7 @@ def list_orders():
             "stock": order.stocks_id,
             "user": order.users_id,
             "type": order.type,
-            "bid_price": order.bid_price,
+            "bid_price": str(round(order.bid_price,2)),
             "bid_volume": order.bid_volume,
             "executed_volume": order.executed_volume,
             "status": order.status,
@@ -51,27 +51,26 @@ def create_order():
     user = User.find_or_fail(user_id)
 
     json_body = orders_routes.current_request.json_body
+    #print(f"iiiiiiiiiiiiiiiiiiii{json_body}           ")
     order_data = OrderSchema().load(json_body)
     total_order_price = float(order_data['bid_price'])*order_data['bid_volume']
     if order_data['type'] == 'BUY' and user.available_funds < total_order_price:
-        raise BadRequestError("Not enough available funds for the operation")
+        return Response("", status_code=400)
 
     if order_data['type'] == 'SELL':
         try:
             user_holding = Holding.where(
-                users_id=user_id, stocks_id=order_data['stocks_id']).one()
+                users_id=user_id, stocks_id=order_data['stock']).one()
         except NoResultFound as ex:
-            raise BadRequestError(
-                "Not enough stocks in holding for the operation 1")
+            return Response("", status_code=400)
         if user_holding.volume < order_data['bid_volume']:
-            raise BadRequestError(
-                "Not enough stocks in holding for the operation")
+            return Response("", status_code=400)
         # check to see if user has enough stocks
     timestamp = time.time()
     dt_object = datetime.fromtimestamp(timestamp)
-    print(order_data["stock"])
+    #print(order_data["stock"])
     order = Order.create(type=order_data['type'], bid_price=order_data["bid_price"], bid_volume=order_data["bid_volume"],
-                         stocks_id=order_data['stock'], users_id=user_id, executed_volume=0, status='OPEN', created_at=dt_object, updated_at=dt_object)
+                         stocks_id=order_data['stock'], users_id=user_id, executed_volume=0, status='PENDING', created_at=dt_object, updated_at=dt_object)
     new_available_funds = float(user.available_funds) - total_order_price
     new_blocked_funds = float(user.blocked_funds) + total_order_price
     user.update(available_funds=new_available_funds,
@@ -82,14 +81,14 @@ def create_order():
         "stock": order.stocks_id,
         "user": order.users_id,
         "type": order.type,
-        "bid_price": order.bid_price,
+        "bid_price": str(round(order.bid_price,2)),
         "bid_volume": order.bid_volume,
         "executed_volume": order.executed_volume,
         "status": order.status,
         "created_at": str(order.created_at),
         "updated_at": str(order.updated_at)
     }
-    return Response(return_order, status_code=201)
+    return Response(return_order, status_code=200)
 
 
 @leangle.describe.tags(["Order"])
@@ -99,14 +98,14 @@ def get_order(id):
     user_id = orders_routes.current_request.context['authorizer']['principalId']
     order = Order.find_or_fail(id)
     if order.users_id != int(user_id):
-        raise UnauthorizedError("User is not allowed to access this note")
+        return Response("", status_code=400)
 
     return_order = {
         "id": order.id,
         "stock": order.stocks_id,
         "user": order.users_id,
         "type": order.type,
-        "bid_price": order.bid_price,
+        "bid_price": str(round(order.bid_price,2)),
         "bid_volume": order.bid_volume,
         "executed_volume": order.executed_volume,
         "status": order.status,
@@ -123,7 +122,7 @@ def cancel_order(id):
     user_id = orders_routes.current_request.context['authorizer']['principalId']
     order = Order.find_or_fail(id)
     if order.users_id != int(user_id):
-        raise UnauthorizedError("User is not allowed to cancel this order")
+        return Response("", status_code=401)
     order.update(status="CANCELLED")
     reclaimed_funds = order.bid_price * order.bid_volume
     user = User.find_or_fail(user_id)
@@ -134,25 +133,25 @@ def cancel_order(id):
 
 def close_order(order: Order, trade_price):
     # close the order:
-    order.update(status="CLOSED")
+    order.update(status="COMPLETED")
     # remove funds from buyer:
     buyer = User.find_or_fail(order.users_id)
     funds_lost = order.bid_volume*float(trade_price)
     buyer.update(blocked_funds=float(buyer.blocked_funds) - funds_lost)
     # update holdings: # WHEN order_type == 'BUY'
-    print("it got here")
+    
 
     buyer_holding = Holding.create(
         users_id=buyer.id,
         stocks_id=order.stocks_id,
         volume=order.bid_volume,
-        bid_price=145,
+        bid_price=order.bid_price,
         bought_on=date.today()
     )
     # Currently not working
     print(buyer_holding)
     # update OHLCV
-    market_day = MarketDay.where(status='OPEN').first()
+    market_day = MarketDay.where(status='PENDING').first()
     ohlcv = OHLCV.where(market_id=market_day.id,
                         stocks_id=order.stocks_id).first()
     open = trade_price if ohlcv.open == -1 else ohlcv.open
@@ -172,14 +171,13 @@ def close_order(order: Order, trade_price):
 @orders_routes.route('/match', methods=['POST'], cors=True, authorizer=token_auth)
 def match_orders():
     days = MarketDay.all()
-    if len(days) == 0 or days[-1].status == 'CLOSED':
-        # if the market is closed then you can not match orders
-        raise BadRequestError('Sorry market is closed try again when it opens')
+    # if len(days) == 0 or days[-1].status == 'CLOSED':
+    #     # if the market is closed then you can not match orders
+    #     raise BadRequestError('Sorry market is closed try again when it opens')
 
     def get_price(e: Order):
         return e.bid_price  # bid price for the order
-    all_open_orders = Order.where(
-        status="OPEN").all()  # get all the open orders
+    all_open_orders = Order.where(status="PENDING").all()  # get all the open orders
     # get all the unique stocks in the open orders
     all_stock_ids = list(set(order.stocks_id for order in all_open_orders))
     for stock_id in all_stock_ids:
