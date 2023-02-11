@@ -5,8 +5,8 @@ from app import app
 header = {'Content-Type': 'application/json'}
 
 login_data = json.dumps({
-    "email": "jay_vee@trilogy.com",
-    "password": "pass"
+    "email": "minagheb@trilogy.com",
+    "password": "1234"
 })
 register_data = json.dumps({
     "email": "minagheb@trilogy.com",
