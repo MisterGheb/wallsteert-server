@@ -24,10 +24,18 @@ logger = logging.getLogger(__name__)
 @stocks_routes.route('/', methods=['GET'], cors=True)
 def list_stocks():
     stocks = Stocks.all()
-    status = "Success"
-    if(stocks==[]):
-        status="No stocks in the system"
-    return StocksSchema(many=True).dump(stocks)
+    returnStocks = []
+    for stock in stocks:
+        print(f" helllllooooooooooooooooooooooooooooooooooo{stock.price}")
+        returnStocks.append({
+            "id": stock.id,
+            "name": stock.name,
+            "price": str(round(stock.price,2)),
+            "sector": stock.sectors_id,
+            "unallocated": stock.unallocated,
+            "total_volume": stock.total_volume
+        })
+    return returnStocks
 
 
 @leangle.describe.tags(["Stocks"])
@@ -40,9 +48,9 @@ def create_stock():
     try:
         data_obj = StocksSchema().load(json_body)
     except TypeError as ex:
-        raise BadRequestError(ex)
+        return Response("", status_code=400)
     except exceptions.ValidationError as ex:
-        raise BadRequestError(ex)
+        return Response("", status_code=400)
 
     try:
         stock = Stocks.create(
@@ -54,12 +62,12 @@ def create_stock():
         )
         
     except exc.IntegrityError as ex:
-        raise BadRequestError(ex._message())
+        return Response("", status_code=400)
 
     return { 
             "id": stock.id,          
             "name": stock.name,
-            "price":stock.price,
+            "price":str(round(stock.price,2)),
             "sector":stock.sectors_id,
             "unallocated": stock.unallocated,
             "total_volume": stock.total_volume 
@@ -80,7 +88,7 @@ def get_stock(stock_id):
     return { 
             "id": stock.id,          
             "name": stock.name,
-            "price":stock.price,
+            "price":str(round(stock.price,2)),
             "sector":stock.sectors_id,
             "unallocated": stock.unallocated,
             "total_volume": stock.total_volume 

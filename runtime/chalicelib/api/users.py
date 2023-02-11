@@ -29,17 +29,28 @@ logger = logging.getLogger(__name__)
 @leangle.describe.response(200, description='User Signed up', schema='SignupSchema')
 @auth_routes.route('/signup', methods=['POST'], cors=True)
 def register_user():
+    
     json_body = auth_routes.current_request.json_body
+<<<<<<< HEAD
     # proper email format
+=======
+    
+>>>>>>> origin/Chalice-review
     regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
     print(f"this is the jsonbody{json_body}")
     print(type(json_body))
     if(not re.fullmatch(regex, json_body.get('email'))):
+<<<<<<< HEAD
         # if email format does not match regex then throw error
         raise BadRequestError("Email format is incorrect!")
     if json_body.get('email') is None or json_body.get('password') is None:
         # if password or email is blank, throw error
         raise BadRequestError("Password or email can not be left blank")
+=======
+        return Response("", status_code=400)
+    if json_body.get('email') is None or json_body.get('password') is None:
+        return Response("", status_code=400)
+>>>>>>> origin/Chalice-review
     if json_body.get('username') is None:
         # if there is no username then the username will be the part of the email before the @ in email
         json_body['username'] = json_body['email'].split('@')[0]
@@ -48,10 +59,15 @@ def register_user():
 
     user_data = SignupSchema().load(json_body)
     if Users.where(email=user_data['email']).first() is not None:
+<<<<<<< HEAD
         raise BadRequestError(
             f"User with email {user_data['email']} already exists")
     user = Users.create(**user_data, token=binascii.hexlify(os.urandom(20)
                                                             ).decode(), available_funds=400000.00, blocked_funds=0.00)
+=======
+        return Response("", status_code=400)
+    user = Users.create(**user_data, token=binascii.hexlify(os.urandom(20)).decode(), available_funds=400000, blocked_funds=0)
+>>>>>>> origin/Chalice-review
 
     return {'id': user.id}
 
@@ -63,14 +79,14 @@ def register_user():
 def login_user():
     json_body = auth_routes.current_request.json_body
     if json_body.get('email') is None or json_body.get('password') is None:
-        raise BadRequestError("Password or email can not be left blank")
+        return Response("", status_code=400)
     user = Users.where(email=json_body['email']).first()
     if user is None:
-        raise BadRequestError(
-            f"User with email {json_body['email']} doesn't exist")
+        return Response("", status_code=400)
 
     if not bcrypt.checkpw(json_body['password'].encode('utf-8'), user.password.encode('utf-8')):
-        raise UnauthorizedError("Username and password doesn't match")
+        return Response("", status_code=401)
+
 
     user.update(token=binascii.hexlify(os.urandom(20)).decode())
     user.update(loggedIn=True)
@@ -100,6 +116,7 @@ def user_profile():
         status = "No user currently logged in!"
         return {'status': status, 'data': {}}
 
+<<<<<<< HEAD
     return_user = {
         "id": UsersSchema().dump(user)["id"],
         "name": UsersSchema().dump(user)["username"],
@@ -108,3 +125,14 @@ def user_profile():
         "available_funds": UsersSchema().dump(user)["available_funds"]
     }
     return return_user
+=======
+    #return {UsersSchema().dump(user)}
+    return {
+            "id": user.id,
+            "name": user.username,
+            "email": user.email,
+            "blocked_funds": user.blocked_funds,
+            "available_funds": str(round(user.available_funds,2))
+            }
+
+>>>>>>> origin/Chalice-review

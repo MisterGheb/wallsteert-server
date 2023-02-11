@@ -30,6 +30,7 @@ def list_holdings():
     user_id = holdings_routes.current_request.context['authorizer']['principalId']
     currentStock = 0
     json_body = holdings_routes.current_request.json_body
+    print(json_body)
     holdings = Holdings.where(users_id=user_id).all()
     returnHoldings = []
     sorted_list = sorted(holdings, key=lambda x: x.stocks_id)
@@ -47,13 +48,13 @@ def list_holdings():
         else: 
             currentStock = stock.id
             returnHoldings.append({
-                "current_value": stock.price,
+                "current_value": str(round(stock.price , 2)),
                 "stocks_possessed": [
                     {
                         "id": holding.stocks_id,
                         "name": stock.name,
                         "total_volume": sumVolume,
-                        "avg_bid_price": round(avg_bid_price, 2)
+                        "avg_bid_price": str(round(avg_bid_price, 2))
                     }
                 ]
             })
@@ -67,8 +68,8 @@ def list_holdings():
         totalWorth += element["stocks_possessed"][0]["total_volume"] * element["current_value"]
         portfolio.append(element["stocks_possessed"])
     finalHoldings = {
-                "investment": totalCost,
-                "current_value": totalWorth,
+                "investment": str(round(totalCost, 2)),
+                "current_value": str(round(totalWorth, 2)),
                 "stocks_possessed": portfolio
             }
     return finalHoldings
