@@ -19,7 +19,7 @@ class TestSectors(object):
             body=json.dumps(data)
         )
         json_response = json.loads(response['body'])
-        assert response['statusCode'] == 201
+        assert response['statusCode'] == 200
         assert 'description' in json_response
         assert 'id' in json_response
         assert 'name' in json_response

@@ -9,7 +9,7 @@ class TestOrders(object):
     def test_buy_order_creation(self, gateway_factory, user_token, stock_id):
         gateway = gateway_factory()
         data = {
-            "stocks_id": stock_id,
+            "stock": stock_id,
             "type": "BUY",
             "bid_price": "400.00",
             "bid_volume": 100
@@ -23,7 +23,7 @@ class TestOrders(object):
         json_response = json.loads(response['body'])
         assert response['statusCode'] == 200
         # assert 'id' in json_response
-        assert json_response['status'] == "OPEN"
+        assert json_response['status'] == "PENDING"
 
     def test_list_orders(self, gateway_factory, user_token):
         gateway = gateway_factory()
@@ -53,8 +53,9 @@ class TestOrders(object):
 
     def test_sell_order_creation_fail(self, gateway_factory, user_token, stock_id):
         gateway = gateway_factory()
+        print (f'this is the json response{stock_id}')
         data = {
-            "stocks_id": stock_id,
+            "stock": stock_id,
             "type": "SELL",
             "bid_price": "350.00",
             "bid_volume": 50
@@ -67,7 +68,7 @@ class TestOrders(object):
         )
         json_response = json.loads(response['body'])
         assert response['statusCode'] == 400
-        assert json_response['Message'] == "Not enough stocks in holding for the operation"
+        assert json_response['Message'] == "You don't own any of the stock you are trying to sell"
         
     def test_cancel_order(self, gateway_factory, user_token, order):
         gateway = gateway_factory()

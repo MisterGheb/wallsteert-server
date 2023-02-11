@@ -5,13 +5,13 @@ from app import app
 header = {'Content-Type': 'application/json'}
 
 login_data = json.dumps({
-    "email": "minagheb@trilogy.com",
-    "password": "1234"
+    "email": "jay_vee@trilogy.com",
+    "password": "pass"
 })
 register_data = json.dumps({
-    "email": "minagheb@trilogy.com",
-    "password": "1234",
-    "username": "Mina"
+    "email": "jay_vee@trilogy.com",
+    "password": "pass",
+    "username": "jayvee"
 })
 
 @pytest.fixture
@@ -79,7 +79,7 @@ def order_id(gateway_factory, user_token):
 def order(gateway_factory, user_token, stock_id):
     gateway = gateway_factory()
     data = {
-        "stocks_id": stock_id,
+        "stock": stock_id,
         "type": "BUY",
         "bid_price": "400.00",
         "bid_volume": 100
