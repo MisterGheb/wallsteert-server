@@ -6,7 +6,7 @@ from sqlalchemy.sql import func
 
 from .base import BaseModel
 from ..constants import CONST_STRING_LENGTH, CONST_TOKEN_LENGTH
-from .users import Users
+#from .users import Users
 from .stocks import Stocks
 
 class Orders(BaseModel):

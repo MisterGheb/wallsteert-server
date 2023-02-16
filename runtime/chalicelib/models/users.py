@@ -3,6 +3,7 @@ from sqlalchemy import Column, String, Integer, Numeric, Boolean
 from sqlalchemy.orm import relationship
 
 from .base import BaseModel
+from .orders import Orders
 from ..constants import CONST_STRING_LENGTH, CONST_TOKEN_LENGTH
 
 
