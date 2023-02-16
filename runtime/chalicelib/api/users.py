@@ -55,7 +55,7 @@ def register_user():
 
     all_days = Market_day.all()
     if len(all_days) == 0:
-        new_day = Market_day.create(day=0, status='OPEN')
+        new_day = Market_day.create(day=1, status='OPEN')
         initialize_ohlcv(Market_day.all()[-1].id)
     return {'id': user.id}
 
@@ -82,7 +82,7 @@ def login_user():
 
 @leangle.describe.tags(["Users"])
 @leangle.describe.parameter(name='body', _in='body', description='User Logout', schema='LoginSchema')
-@leangle.describe.response(200, description='User Logged out', schema='LoginSchema')
+@leangle.describe.response(200, description='User Loggedp out', schema='LoginSchema')
 @auth_routes.route('/logout', methods=['POST'], cors=True, authorizer=token_auth)
 def logout_user():
     user_id = auth_routes.current_request.context['authorizer']['principalId']

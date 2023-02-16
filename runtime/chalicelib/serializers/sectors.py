@@ -6,14 +6,6 @@ class SectorsSchema(Schema):
     id = fields.Integer(dump_only=True)
     name = fields.String(required=True)
     description = fields.String(required=True)
-    
-    class Meta:
-        unknown = EXCLUDE
 
-@leangle.add_schema()
-class PatchSectorsSchema(Schema):
-    name = fields.String()
-    description = fields.String()
-    
     class Meta:
         unknown = EXCLUDE

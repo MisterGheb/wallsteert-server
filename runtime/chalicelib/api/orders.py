@@ -49,13 +49,19 @@ def list_orders():
 def create_order():
     user_id = orders_routes.current_request.context['authorizer']['principalId']
     user = User.find_or_fail(user_id)
-
+    market_reverse = sorted(MarketDay.all(), key=lambda x: x.day, reverse=True)
+    market_day = market_reverse[0] 
+    if market_day.status == "CLOSED":
+        return Response("", status_code=403)   
     json_body = orders_routes.current_request.json_body
     order_data = OrderSchema().load(json_body)
     total_order_price = float(order_data['bid_price'])*order_data['bid_volume']
-    if order_data['type'] == 'BUY' and user.available_funds < total_order_price:
+    if order_data['type'] == 'BUY' and user.available_funds < (total_order_price + float(user.blocked_funds)):
         raise BadRequestError("Not enough available funds for the operation")
 
+    if order_data['type'] == 'BUY':
+        new_blocked_funds = float(user.blocked_funds) + total_order_price
+        user.update(blocked_funds=new_blocked_funds)
     if order_data['type'] == 'SELL':
         try:
             user_holding = Holding.where(
@@ -72,10 +78,8 @@ def create_order():
     print(order_data["stock"])
     order = Order.create(type=order_data['type'], bid_price=order_data["bid_price"], bid_volume=order_data["bid_volume"],
                          stocks_id=order_data['stock'], users_id=user_id, executed_volume=0, status='PENDING', created_at=dt_object, updated_at=dt_object)
-    new_available_funds = float(user.available_funds) - total_order_price
-    new_blocked_funds = float(user.blocked_funds) + total_order_price
-    user.update(available_funds=new_available_funds,
-                blocked_funds=new_blocked_funds)
+    # new_available_funds = float(user.available_funds) - total_order_price
+
 
     return_order = {
         "id": order.id,
@@ -127,32 +131,10 @@ def cancel_order(id):
     order.update(status="CANCELLED")
     reclaimed_funds = order.bid_price * order.bid_volume
     user = User.find_or_fail(user_id)
-    user.update(available_funds=user.available_funds+reclaimed_funds,
-                blocked_funds=user.blocked_funds-reclaimed_funds)
+    user.update(blocked_funds=user.blocked_funds-reclaimed_funds)
 
     return Response("", status_code=204)
 
-
-def close_order(order: Order, trade_price):
-    # close the order:
-    order.update(status="COMPLETED")
-    # remove funds from buyer:
-    # Currently not working
-    print(buyer_holding)
-    # update OHLCV
-    market_day = MarketDay.where(status='OPEN').first()
-    ohlcv = OHLCV.where(market_id=market_day.id,
-                        stocks_id=order.stocks_id).first()
-    open = trade_price if ohlcv.open == -1 else ohlcv.open
-    high = trade_price if ohlcv.high < trade_price else ohlcv.high
-    low = trade_price if ohlcv.low > trade_price or ohlcv.low == -1 else ohlcv.low
-    ohlcv.update(
-        open=open,
-        high=high,
-        low=low,
-        close=trade_price,
-        volume=ohlcv.volume+order.bid_volume
-    )
 
 
 @leangle.describe.tags(["Order"])
@@ -212,9 +194,7 @@ def match_orders():
                 buyer_user = User.where(id=buy_order.users_id).first()
                 seller_user = User.where(id=sell_order.users_id).first()
                 trade_price = buy_order.bid_price if buy_order.created_at > sell_order.created_at else sell_order.bid_price
-                print(f'This is the buying user {buyer_user}')
-                buyer_user.update(available_funds=buyer_user.available_funds + trade_amount*buy_order.bid_price - trade_amount *
-                                  trade_price, blocked_funds=buyer_user.blocked_funds - trade_amount*buy_order.bid_price)
+                buyer_user.update(available_funds=buyer_user.available_funds - trade_amount * trade_price, blocked_funds=buyer_user.blocked_funds - trade_amount*buy_order.bid_price)
                 seller_user.update(
                     available_funds=seller_user.available_funds + trade_amount*trade_price)
                 if buyer_holding is not None:
@@ -231,8 +211,8 @@ def match_orders():
                         bought_on=date.today()
                 )
                 seller_holding = Holding.where(users_id=sell_order.users_id, stocks_id=stock.id).first()
-                seller_holding.update(
-                    volume=seller_holding.volume - trade_amount)
+                # seller_bid_price_holding = (seller_holding.volume * seller_holding.bid_price - trade_amount * trade_price)/(seller_holding.volume - trade_amount)
+                seller_holding.update(volume=seller_holding.volume - trade_amount)
                 # if seller_holding.volume == 0:
                 #     seller_holding.DELETE
                 # one of them has executed_volume == bid_volume -> should be closed and the user's funds and holdings updated
@@ -268,7 +248,7 @@ def match_orders():
                 buy_order.update(executed_volume=buy_order.executed_volume + trade_amount)
                 buyer_holding = Holding.where(users_id=buy_order.users_id, stocks_id=stock.id).first()
                 buyer_user = User.where(id=buy_order.users_id).first()
-                buyer_user.update(blocked_funds=buyer_user.blocked_funds - trade_amount*buy_order.bid_price)
+                buyer_user.update(available_funds=buyer_user.available_funds - trade_amount * buy_order.bid_price, blocked_funds=buyer_user.blocked_funds - trade_amount*buy_order.bid_price)
                 if buyer_holding is not None:
                     average_bid_price_holding = (buyer_holding.volume * buyer_holding.bid_price +
                                                  trade_amount * buy_order.bid_price)/(buyer_holding.volume + trade_amount)
