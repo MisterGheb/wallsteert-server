@@ -32,7 +32,7 @@ def open_market():
     all_days = MarketDay.all()
     if len(all_days) > 0 and all_days[-1].status == "OPEN":
         print("length of days is greater than 0")
-        return Response("", status_code=400)
+        raise BadRequestError("Current day must be closed to open a new day")
     if len(all_days) == 0:
         print("length of days is 0")
         new_day = MarketDay.create(day=0, status='OPEN')
@@ -49,7 +49,7 @@ def open_market():
 def close_market():
     all_days = MarketDay.all()
     if len(all_days) == 0 or all_days[-1].status == "CLOSED":
-        return Response("", status_code=400)
+        raise BadRequestError("Market day is not open yet")
     last_day = all_days[-1]
     last_day.update(status="CLOSED")
     return Response({}, status_code=204)
@@ -59,14 +59,14 @@ def close_market():
 @market_day_routes.route('/ohlcv', methods=['GET'], cors=True)
 def get_ohlcv():
     if not market_day_routes.current_request.query_params:
-        return Response("", status_code=400)
+        raise BadRequestError("Missing required 'day' parameter 1")
     day_num = market_day_routes.current_request.query_params.get('day', None)
     if not day_num:
-        return Response("", status_code=400)
+        raise BadRequestError("Missing required 'day' parameter 2")
     try:
         day = MarketDay.where(day=day_num).one()
     except NoResultFound as ex:
-        return Response("", status_code=400)
+        raise BadRequestError("Day does not exist")
     ohlcvs = OHLCV.where(market_id=day.id).all()
     return_list = []
     for ohlcv in ohlcvs:

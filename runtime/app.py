@@ -7,6 +7,7 @@ from chalice import Chalice, CORSConfig, Response
 from chalice.app import ConvertToMiddleware
 from aws_lambda_powertools import Logger
 from aws_lambda_powertools import Tracer
+from chalicelib.api.news import news_routes
 from chalicelib.api.orders import orders_routes
 from chalicelib.api.stocks import stocks_routes
 from chalicelib.api.sectors import sectors_routes
@@ -45,6 +46,7 @@ app.register_blueprint(market_day_routes, url_prefix='/api/v1/market')
 app.register_blueprint(stocks_routes, url_prefix='/api/v1/stocks')
 app.register_blueprint(holdings_routes, url_prefix='/api/v1/holdings')
 app.register_blueprint(users_routes, url_prefix='/api/v1/users')
+app.register_blueprint(news_routes, url_prefix='/api/v1/news')
 app.log.setLevel(logging.DEBUG)
 
 if os.getenv('RUN_MIGRATE', 'True') == 'True':

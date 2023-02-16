@@ -9,3 +9,11 @@ class SectorsSchema(Schema):
     
     class Meta:
         unknown = EXCLUDE
+
+@leangle.add_schema()
+class PatchSectorsSchema(Schema):
+    name = fields.String()
+    description = fields.String()
+    
+    class Meta:
+        unknown = EXCLUDE
