@@ -32,10 +32,10 @@ def open_market():
     all_days = MarketDay.all()
     if len(all_days) > 0 and all_days[-1].status == "OPEN":
         print("length of days is greater than 0")
-        return Response("", status_code=400)
+        raise BadRequestError("Current day must be closed to open a new day")
     if len(all_days) == 0:
         print("length of days is 0")
-        new_day = MarketDay.create(day=0, status='OPEN')
+        new_day = MarketDay.create(day=1, status='OPEN')
     else:
         print("its closed so ok")
         last_day = all_days[-1]
@@ -49,36 +49,41 @@ def open_market():
 def close_market():
     all_days = MarketDay.all()
     if len(all_days) == 0 or all_days[-1].status == "CLOSED":
-        return Response("", status_code=400)
+        raise BadRequestError("Market day is not open yet")
     last_day = all_days[-1]
     last_day.update(status="CLOSED")
     return Response({}, status_code=204)
 
 @leangle.describe.tags(["Market"])
 @leangle.describe.response(204, description='Market closed', schema='OHLCVResponseSchema')
-@market_day_routes.route('/ohlcv', methods=['GET'], cors=True)
+@market_day_routes.route('/ohlc', methods=['GET'], cors=True)
 def get_ohlcv():
     if not market_day_routes.current_request.query_params:
-        return Response("", status_code=400)
+        print("there is no query param ")
+        return Response({"data": "Market is now open"}, status_code=400)
     day_num = market_day_routes.current_request.query_params.get('day', None)
     if not day_num:
-        return Response("", status_code=400)
+        print("there is no day value ")
+        return Response({"data": "Market is now open"}, status_code=400)
     try:
         day = MarketDay.where(day=day_num).one()
     except NoResultFound as ex:
-        return Response("", status_code=400)
+        return Response({"data": "Market is now open"}, status_code=400)
     ohlcvs = OHLCV.where(market_id=day.id).all()
+    print(f"this is the ohlcvs length     {len(ohlcvs)}")
     return_list = []
     for ohlcv in ohlcvs:
         market_day = MarketDay.find_or_fail(ohlcv.market_id)
+        stock_name = Stock.find_or_fail(ohlcv.stocks_id)
         obj = {
             'day': market_day.day,
-            'stock': ohlcv.stocks_id,
-            'open': ohlcv.open,
-            'high': ohlcv.high,
-            'low': ohlcv.low,
-            'close': ohlcv.close,
+            'stock': stock_name.name,
+            'open': ('%.2f' % ohlcv.open),
+            'high': ('%.2f' % ohlcv.high),
+            'low': ('%.2f' % ohlcv.low),
+            'close': ('%.2f' % ohlcv.close),
             'volume': ohlcv.volume,
         }
         return_list.append(obj)
+    print(return_list)
     return return_list

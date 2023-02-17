@@ -9,7 +9,7 @@ import os
 import binascii
 import leangle
 import bcrypt
-from chalice import Blueprint, BadRequestError, UnauthorizedError
+from chalice import Blueprint, BadRequestError, UnauthorizedError, Response
 from sqlalchemy import func
 
 from ..authorizer import token_auth
@@ -29,47 +29,27 @@ logger = logging.getLogger(__name__)
 def list_holdings():
     user_id = holdings_routes.current_request.context['authorizer']['principalId']
     currentStock = 0
-    json_body = holdings_routes.current_request.json_body
-    print(json_body)
+    print("function invoked")
     holdings = Holdings.where(users_id=user_id).all()
-    returnHoldings = []
-    sorted_list = sorted(holdings, key=lambda x: x.stocks_id)
-    for holding in sorted_list:
-        stock = Stocks.where(id=holding.stocks_id).all()[0]
-        order = Orders.where(users_id=holding.users_id, stocks_id=stock.id)
-        sumBidPrice = 0
-        sumVolume = 0
-        for o in order:
-            sumBidPrice += o.bid_price*o.executed_volume
-            sumVolume += o.executed_volume
-        avg_bid_price = sumBidPrice/sumVolume
-        if currentStock == stock.id:
-            pass
-        else: 
-            currentStock = stock.id
-            returnHoldings.append({
-                "current_value": str(round(stock.price , 2)),
-                "stocks_possessed": [
-                    {
-                        "id": holding.stocks_id,
-                        "name": stock.name,
-                        "total_volume": sumVolume,
-                        "avg_bid_price": str(round(avg_bid_price, 2))
-                    }
-                ]
-            })
-    totalStocks = 0
+    if len(holdings) == 0:
+        return Response("", status_code=404)
     totalCost = 0
     totalWorth = 0
     portfolio = []
-    for element in returnHoldings:
-        print(element)
-        totalCost += element["stocks_possessed"][0]["total_volume"] * element["stocks_possessed"][0]["avg_bid_price"]
-        totalWorth += element["stocks_possessed"][0]["total_volume"] * element["current_value"]
-        portfolio.append(element["stocks_possessed"])
+    for holding in holdings:
+        print(holding)
+        stock = Stocks.where(id=holding.stocks_id).first()
+        totalCost += holding.volume * holding.bid_price
+        totalWorth += holding.volume *stock.price
+        portfolio.append({
+                        "id": holding.stocks_id,
+                        "name": stock.name,
+                        "total_volume": holding.volume,
+                        "avg_bid_price": ('%.2f' % holding.bid_price)
+                    })
     finalHoldings = {
-                "investment": str(round(totalCost, 2)),
-                "current_value": str(round(totalWorth, 2)),
+                "investment": ('%.2f' % totalCost),
+                "current_value":  ('%.2f' % totalWorth),
                 "stocks_possessed": portfolio
             }
     return finalHoldings

@@ -1,8 +1,8 @@
-"""generating_Tables>
+"""new database
 
-Revision ID: d36d514b17c0
+Revision ID: e990f9d8694a
 Revises: 
-Create Date: 2023-02-06 20:21:54.177234
+Create Date: 2023-02-16 11:30:22.470965
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'd36d514b17c0'
+revision = 'e990f9d8694a'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -40,9 +40,11 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=50), nullable=False),
     sa.Column('email', sa.String(length=50), nullable=False),
-    sa.Column('password', sa.String(length=50), nullable=False),
     sa.Column('available_funds', sa.Numeric(precision=12, scale=2), nullable=False),
     sa.Column('blocked_funds', sa.Numeric(precision=12, scale=2), nullable=False),
+    sa.Column('password', sa.String(length=64), nullable=True),
+    sa.Column('token', sa.String(length=40), nullable=True),
+    sa.Column('loggedIn', sa.Boolean(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('stocks',
@@ -62,10 +64,10 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.TIMESTAMP(), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('volume', sa.Numeric(precision=12, scale=2), nullable=False),
-    sa.Column('bid_price', sa.String(length=4), nullable=False),
+    sa.Column('bid_price', sa.Numeric(precision=12, scale=2), nullable=False),
     sa.Column('bought_on', sa.Date(), nullable=False),
-    sa.Column('stocks_id', sa.Integer(), nullable=True),
     sa.Column('users_id', sa.Integer(), nullable=True),
+    sa.Column('stocks_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['stocks_id'], ['stocks.id'], ),
     sa.ForeignKeyConstraint(['users_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -89,8 +91,8 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('bid_price', sa.Numeric(precision=12, scale=2), nullable=False),
     sa.Column('type', sa.String(length=4), nullable=False),
-    sa.Column('created_at', sa.TIMESTAMP(), nullable=False),
-    sa.Column('updated_at', sa.TIMESTAMP(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.Column('status', sa.String(length=20), nullable=False),
     sa.Column('bid_volume', sa.Integer(), nullable=False),
     sa.Column('executed_volume', sa.Integer(), nullable=False),

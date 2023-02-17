@@ -10,7 +10,9 @@ bcrypt
 pytest
 aws_lambda_powertools==2.7.1
 aws_xray_sdk==2.11.0
-flake8==4.0.1
-coverage
-pytest-cov
 https://github.com/trilogy-group/leangle/archive/refs/tags/v2.0.tar.gz
+boto3==1.26.68
+botocore==1.29.68
+jmespath==1.0.1
+requests-aws4auth==1.2.2
+s3transfer==0.6.0
