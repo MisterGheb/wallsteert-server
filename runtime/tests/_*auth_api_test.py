@@ -45,15 +45,15 @@ class TestUsers(object):
         assert 'token' in json_response
 
 
-    def test_fail_login(self, gateway_factory):
-        gateway = gateway_factory()
-        response = gateway.handle_request(
-            method='POST',
-            path='/api/v1/auth/login',
-            headers=header,
-            body="{'email': 'test@email.com', 'password': 'invalid_pass'}"
-        )
-        assert response['statusCode'] == 400
+    # def test_fail_login(self, gateway_factory):
+    #     gateway = gateway_factory()
+    #     response = gateway.handle_request(
+    #         method='POST',
+    #         path='/api/v1/auth/login',
+    #         headers={'Authorization': f'Token {user_token}', **header},
+    #         body="{'email': 'test@email.com', 'password': 'invalid_pass'}"
+    #     )
+    #     assert response['statusCode'] == 400
 
     def test_fail_login(self, gateway_factory):
         gateway = gateway_factory()
@@ -64,6 +64,16 @@ class TestUsers(object):
             body="{'email': 'test@email.com', 'password': 'invalid_pass'}"
         )
         assert response['statusCode'] == 400
+
+    def test_logout(self, gateway_factory, user_token):
+        gateway = gateway_factory()
+        response = gateway.handle_request(
+            method='POST',
+            path='/api/v1/auth/logout',
+            headers={'Authorization': f'Token {user_token}'},
+            body=''
+        )
+        assert response['statusCode'] == 204
 
     def test_authorize_user(self, gateway_factory, user_token):
         gateway = gateway_factory()

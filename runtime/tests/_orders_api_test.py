@@ -80,3 +80,70 @@ class TestOrders(object):
             body=''
         )
         assert response['statusCode'] == 204
+
+    def test_match_order(self, gateway_factory, user_token, order_id):
+        gateway = gateway_factory()
+        response = gateway.handle_request(
+            method='POST',
+            path='/api/v1/orders/match',
+            headers={'Authorization': f'Token {user_token}', **header},
+            body=''
+        )
+        assert response['statusCode'] == 200
+        response = gateway.handle_request(
+            method='GET',
+            path=f'/api/v1/orders/{order_id}',
+            headers={'Authorization': f'Token {user_token}', **header},
+            body=''
+        )
+        json_response = json.loads(response['body'])
+        assert json_response["status"] == "COMPLETED"
+        assert json_response["bid_volume"] == json_response["executed_volume"]
+    
+    def test_buy_order_creation2(self, gateway_factory, user_token, stock_id):
+        gateway = gateway_factory()
+        data = {
+            "stock": stock_id,
+            "type": "BUY",
+            "bid_price": "400.00",
+            "bid_volume": 100
+        }
+        response = gateway.handle_request(
+            method='POST',
+            path='/api/v1/orders',
+            headers={'Authorization': f'Token {user_token}', **header},
+            body=json.dumps(data)
+        )
+        json_response = json.loads(response['body'])
+        assert response['statusCode'] == 200
+        # assert 'id' in json_response
+        assert json_response['status'] == "PENDING"
+
+    def test_sell_order_creation_pass(self, gateway_factory, user_token, stock_id):
+        gateway = gateway_factory()
+        data = {
+            "stock": stock_id,
+            "type": "SELL",
+            "bid_price": "350.00",
+            "bid_volume": 50
+        }
+        response = gateway.handle_request(
+            method='POST',
+            path='/api/v1/orders',
+            headers={'Authorization': f'Token {user_token}', **header},
+            body=json.dumps(data)
+        )
+        json_response = json.loads(response['body'])
+        assert response['statusCode'] == 200
+        # assert json_response['Message'] == "You don't own any of the stock you are trying to sell"
+    
+    def test_match_order2(self, gateway_factory, user_token, order_id):
+        gateway = gateway_factory()
+        response = gateway.handle_request(
+            method='POST',
+            path='/api/v1/orders/match',
+            headers={'Authorization': f'Token {user_token}', **header},
+            body=''
+        )
+        assert response['statusCode'] == 200
+ 

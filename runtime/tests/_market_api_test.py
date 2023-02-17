@@ -1,7 +1,7 @@
 import pytest
 import json
 
-from .fixtures import header, gateway_factory, user_token, sector_id, stock_id
+from .fixtures import header, gateway_factory, user_token, sector_id, stock_id, stock_name
 
 
 
@@ -53,7 +53,7 @@ class TestMarket(object):
 
 
 
-    def test_ohlcv(self, gateway_factory, user_token, stock_id):
+    def test_ohlcv(self, gateway_factory, user_token, stock_name):
         gateway = gateway_factory()
         response = gateway.handle_request(
             method='POST',
@@ -63,16 +63,17 @@ class TestMarket(object):
         )
         response = gateway.handle_request(
             method='GET',
-            path=f'/api/v1/market/ohlcv/?day=1',
+            path=f'/api/v1/market/ohlc/?day=1',
             headers={'Authorization': f'Token {user_token}', **header},
             body=''
         )
         json_response = json.loads(response['body'])
+        print(json_response)
         assert response['statusCode'] == 200
-        stock_ids = [ohlcv['stock'] for ohlcv in json_response]
-        assert stock_id in stock_ids
-        assert json_response[0]['open'] == -1
-        assert json_response[0]['high'] == -1
-        assert json_response[0]['low'] == -1
-        assert json_response[0]['close'] == -1
-        assert json_response[0]['volume'] == 0
+        stock_names = [ohlcv['stock'] for ohlcv in json_response]
+        assert stock_name in stock_names
+        assert float(json_response[0]['open']) == -1
+        assert float(json_response[0]['high']) == -1
+        assert float(json_response[0]['low']) == -1
+        assert float(json_response[0]['close']) == -1
+        assert float(json_response[0]['volume']) == 0

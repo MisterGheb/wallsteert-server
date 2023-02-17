@@ -11,7 +11,7 @@ class TestStocks(object):
         data = {
             "name": "TSLA",
             "price": "200.00",
-            "sectors_id": sector_id,
+            "sector": sector_id,
             "unallocated": 300000,
             "total_volume": 3000000
         }
@@ -39,7 +39,7 @@ class TestStocks(object):
         assert 'name' in json_response[0]
         assert 'unallocated' in json_response[0]
         assert 'id' in json_response[0]
-
+    
     def test_retrieve_stock(self, gateway_factory, stock_id):
         gateway = gateway_factory()
         response = gateway.handle_request(

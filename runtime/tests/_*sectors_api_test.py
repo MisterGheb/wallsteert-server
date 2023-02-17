@@ -58,18 +58,18 @@ class TestSectors(object):
         response = gateway.handle_request(
             method='PATCH',
             path=f'/api/v1/sectors/{sector_id}',
-            headers=header,
+            headers={'Authorization': f'Token {user_token}', **header},
             body='{"description": "TEST"}'
         )
         json_response = json.loads(response['body'])
-        assert response['statusCode'] == 201
+        assert response['statusCode'] == 200
         assert 'description' in json_response
         assert 'id' in json_response
         assert 'name' in json_response
         response = gateway.handle_request(
             method='GET',
             path=f'/api/v1/sectors/{sector_id}',
-            headers=header,
+            headers={'Authorization': f'Token {user_token}', **header},
             body=''
         )
         json_response = json.loads(response['body'])

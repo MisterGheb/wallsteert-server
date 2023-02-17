@@ -1,0 +1,2 @@
+coverage run --source=chalicelib.api --data-file .coverage -m pytest
+coverage report -m
