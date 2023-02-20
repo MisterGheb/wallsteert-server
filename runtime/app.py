@@ -15,6 +15,8 @@ from chalicelib.api.holdings import holdings_routes
 from chalicelib.api.users import users_routes
 from chalicelib.api.users import auth_routes
 from chalicelib.api.market_day import market_day_routes
+from chalicelib.api.logs import logs_routes
+from chalicelib.api.upload import upload_routes
 
 if 'LAMBDA_TASK_ROOT' in os.environ:
   from chalice_utils.swagger import TemplatedSwaggerGenerator #noqa
@@ -47,6 +49,8 @@ app.register_blueprint(stocks_routes, url_prefix='/api/v1/stocks')
 app.register_blueprint(holdings_routes, url_prefix='/api/v1/holdings')
 app.register_blueprint(users_routes, url_prefix='/api/v1/users')
 app.register_blueprint(news_routes, url_prefix='/api/v1/news')
+app.register_blueprint(logs_routes, url_prefix='/api/v1/process-logs')
+app.register_blueprint(upload_routes, url_prefix='/api/v1/upload')
 app.log.setLevel(logging.DEBUG)
 
 if os.getenv('RUN_MIGRATE', 'True') == 'True':
