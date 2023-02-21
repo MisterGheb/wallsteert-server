@@ -1,12 +1,6 @@
 import logging
-import requests
-import random
-import string
-import os
-import binascii
 import leangle
-import bcrypt
-from chalice import Blueprint, BadRequestError, UnauthorizedError, Response
+from chalice import Blueprint, BadRequestError, Response
 from sqlalchemy import exc
 from marshmallow import exceptions
 
@@ -24,9 +18,22 @@ logger = logging.getLogger(__name__)
 
 
 @leangle.describe.tags(["Stocks"])
-@leangle.describe.parameter(name='body', _in='body', description='List all stocks available in the market', schema='StocksSchema')
-@leangle.describe.response(200, description='Stocks Listed', schema='StocksSchema')
-@stocks_routes.route('/', methods=['GET'], cors=True)
+@leangle.describe.parameter(
+    name='body',
+    _in='body',
+    description='List all stocks available in the market',
+    schema='StocksSchema'
+)
+@leangle.describe.response(
+    200,
+    description='Stocks Listed',
+    schema='StocksSchema'
+)
+@stocks_routes.route(
+    '/',
+    methods=['GET'],
+    cors=True
+)
 def list_stocks():
     stocks = Stocks.all()
     returnStocks = []
@@ -43,9 +50,23 @@ def list_stocks():
 
 
 @leangle.describe.tags(["Stocks"])
-@leangle.describe.parameter(name='body', _in='body', description='Create a stock in the market', schema='StocksSchema')
-@leangle.describe.response(200, description='Stock Created', schema='StocksSchema')
-@stocks_routes.route('/', methods=['POST'], cors=True, authorizer=token_auth)
+@leangle.describe.parameter(
+    name='body',
+    _in='body',
+    description='Create a stock in the market',
+    schema='StocksSchema'
+)
+@leangle.describe.response(
+    200,
+    description='Stock Created',
+    schema='StocksSchema'
+)
+@stocks_routes.route(
+    '/',
+    methods=['POST'],
+    cors=True,
+    authorizer=token_auth
+)
 def create_stock():
     user_id = stocks_routes.current_request.context['authorizer']['principalId']
     user = User.find_or_fail(user_id)
@@ -77,23 +98,33 @@ def create_stock():
         "unallocated": stock.unallocated,
         "total_volume": stock.total_volume
     }
-    market_reverse = sorted(Market_day.all(), key=lambda x: x.day, reverse=True)
+    market_reverse = sorted(
+        Market_day.all(), key=lambda x: x.day, reverse=True)
     if market_reverse[0].status == "OPEN":
         OHLCV.create(
-                market_id=market_reverse[0].id,
-                stocks_id=stock.id,
-                open=-1,
-                high=-1,
-                low=-1,
-                close=-1,
-                volume=0
-            )
+            market_id=market_reverse[0].id,
+            stocks_id=stock.id,
+            open=-1,
+            high=-1,
+            low=-1,
+            close=-1,
+            volume=0
+        )
     return Response(return_stock, status_code=200)
 
 
 @leangle.describe.tags(["Stocks"])
-@leangle.describe.parameter(name='body', _in='body', description='Get Stock', schema='StocksSchema')
-@leangle.describe.response(200, description='Stock Retrieved', schema='StocksSchema')
+@leangle.describe.parameter(
+    name='body',
+    _in='body',
+    description='Get Stock',
+    schema='StocksSchema'
+)
+@leangle.describe.response(
+    200,
+    description='Stock Retrieved',
+    schema='StocksSchema'
+)
 @stocks_routes.route('/{stock_id}', methods=['GET'], cors=True)
 def get_stock(stock_id):
     stock = Stocks.where(id=stock_id).first()

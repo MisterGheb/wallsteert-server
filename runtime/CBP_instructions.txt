@@ -1,0 +1,230 @@
+This is the result from using pylint on my stock.py code
+
+gitpod /workspace/tu-feb-2023--mina-tu-wallstreet-server-mina/runtime/chalicelib/api $ pylint stocks.py
+************* Module stocks
+stocks.py:21:0: C0301: Line too long (130/100) (line-too-long)
+stocks.py:40:0: C0301: Line too long (119/100) (line-too-long)
+stocks.py:94:0: C0325: Unnecessary parens after 'if' keyword (superfluous-parens)
+stocks.py:104:0: C0304: Final newline missing (missing-final-newline)
+stocks.py:1:0: C0114: Missing module docstring (missing-module-docstring)
+stocks.py:7:0: E0402: Attempted relative import beyond top-level package (relative-beyond-top-level)
+stocks.py:8:0: E0402: Attempted relative import beyond top-level package (relative-beyond-top-level)
+stocks.py:9:0: E0402: Attempted relative import beyond top-level package (relative-beyond-top-level)
+stocks.py:10:0: E0402: Attempted relative import beyond top-level package (relative-beyond-top-level)
+stocks.py:11:0: E0402: Attempted relative import beyond top-level package (relative-beyond-top-level)
+stocks.py:12:0: E0402: Attempted relative import beyond top-level package (relative-beyond-top-level)
+stocks.py:13:0: E0402: Attempted relative import beyond top-level package (relative-beyond-top-level)
+stocks.py:14:0: E0402: Attempted relative import beyond top-level package (relative-beyond-top-level)
+stocks.py:14:0: W0401: Wildcard import constants (wildcard-import)
+stocks.py:24:0: C0116: Missing function or method docstring (missing-function-docstring)
+stocks.py:26:4: C0103: Variable name "returnStocks" doesn't conform to snake_case naming style (invalid-name)
+stocks.py:31:22: C0209: Formatting a regular string which could be a f-string (consider-using-f-string)
+stocks.py:43:0: C0116: Missing function or method docstring (missing-function-docstring)
+stocks.py:51:8: W0707: Consider explicitly re-raising using 'raise BadRequestError(ex) from ex' (raise-missing-from)
+stocks.py:53:8: W0707: Consider explicitly re-raising using 'raise BadRequestError(ex) from ex' (raise-missing-from)
+stocks.py:64:8: W0707: Consider explicitly re-raising using 'raise BadRequestError(ex._message()) from ex' (raise-missing-from)
+stocks.py:64:30: W0212: Access to a protected member _message of a client class (protected-access)
+stocks.py:45:4: W0612: Unused variable 'user' (unused-variable)
+stocks.py:92:0: C0116: Missing function or method docstring (missing-function-docstring)
+stocks.py:94:7: C0121: Comparison 'stock == None' should be 'stock is None' (singleton-comparison)
+stocks.py:99:18: C0209: Formatting a regular string which could be a f-string (consider-using-f-string)
+stocks.py:7:0: W0611: Unused initialize_ohlcv imported from market_day (unused-import)
+
+------------------------------------------------------------------
+Your code has been rated at 0.00/10 (previous run: 0.00/10, +0.00)
+
+
+This the result of using Flake 8 on my code:
+gitpod /workspace/tu-feb-2023--mina-tu-wallstreet-server-mina/runtime/chalicelib/api $ flake8 stocks.py
+
+stocks.py:7:1: F401 '.market_day.initialize_ohlcv' imported but unused
+stocks.py:14:1: F403 'from ..constants import *' used; unable to detect undefined names
+stocks.py:14:1: F401 '..constants.*' imported but unused
+stocks.py:23:6: E131 continuation line unaligned for hanging indent
+stocks.py:23:17: W291 trailing whitespace
+stocks.py:24:6: E131 continuation line unaligned for hanging indent
+stocks.py:24:60: W291 trailing whitespace
+stocks.py:25:6: E131 continuation line unaligned for hanging indent
+stocks.py:28:9: W291 trailing whitespace
+stocks.py:29:33: W291 trailing whitespace
+stocks.py:33:9: W291 trailing whitespace
+stocks.py:34:21: W291 trailing whitespace
+stocks.py:54:17: W291 trailing whitespace
+stocks.py:55:16: W291 trailing whitespace
+stocks.py:56:48: W291 trailing whitespace
+stocks.py:60:9: W291 trailing whitespace
+stocks.py:61:33: W291 trailing whitespace
+stocks.py:65:9: W291 trailing whitespace
+stocks.py:66:22: W291 trailing whitespace
+stocks.py:67:15: W291 trailing whitespace
+stocks.py:71:80: E501 line too long (80 > 79 characters)
+stocks.py:72:5: F841 local variable 'user' is assigned to but never used
+stocks.py:101:80: E501 line too long (80 > 79 characters)
+stocks.py:117:17: W291 trailing whitespace
+stocks.py:118:16: W291 trailing whitespace
+stocks.py:119:29: W291 trailing whitespace
+stocks.py:124:35: W291 trailing whitespace
+stocks.py:130:7: E275 missing whitespace after keyword
+stocks.py:130:14: E711 comparison to None should be 'if cond is None:'
+stocks.py:140:24: W292 no newline at end of file
+
+1 b) Out of these two linters I prefer the pylint, I feel like the explanations are a bit better to 
+understand where I going wrong
+
+
+2. 
+
+I used autopep8 to fix my code smells, this was the output file from autopep8 regarding my stocks.api file:
+
+import logging
+import leangle
+from chalice import Blueprint, BadRequestError, Response
+from sqlalchemy import exc
+from marshmallow import exceptions
+
+from .market_day import initialize_ohlcv
+from ..models.ohlcv import Ohlcv as OHLCV
+from ..authorizer import token_auth
+from ..models.market_day import Market_day
+from ..models.users import Users as User
+from ..models.stocks import Stocks
+from ..serializers.stocks import StocksSchema
+from ..constants import *
+
+stocks_routes = Blueprint('stocks')
+logger = logging.getLogger(__name__)
+
+
+@leangle.describe.tags(["Stocks"])
+@leangle.describe.parameter(
+    name='body',
+    _in='body',
+    description='List all stocks available in the market',
+    schema='StocksSchema'
+)
+@leangle.describe.response(
+    200,
+    description='Stocks Listed',
+    schema='StocksSchema'
+)
+@stocks_routes.route(
+    '/',
+    methods=['GET'],
+    cors=True
+)
+def list_stocks():
+    stocks = Stocks.all()
+    returnStocks = []
+    for stock in stocks:
+        returnStocks.append({
+            "id": stock.id,
+            "name": stock.name,
+            "price": ('%.2f' % stock.price),
+            "sector": stock.sectors_id,
+            "unallocated": stock.unallocated,
+            "total_volume": stock.total_volume
+        })
+    return returnStocks
+
+
+@leangle.describe.tags(["Stocks"])
+@leangle.describe.parameter(
+    name='body',
+    _in='body',
+    description='Create a stock in the market',
+    schema='StocksSchema'
+)
+@leangle.describe.response(
+    200,
+    description='Stock Created',
+    schema='StocksSchema'
+)
+@stocks_routes.route(
+    '/',
+    methods=['POST'],
+    cors=True,
+    authorizer=token_auth
+)
+def create_stock():
+    user_id = stocks_routes.current_request.context['authorizer']['principalId']
+    user = User.find_or_fail(user_id)
+
+    json_body = stocks_routes.current_request.json_body
+    try:
+        data_obj = StocksSchema().load(json_body)
+    except TypeError as ex:
+        raise BadRequestError(ex)
+    except exceptions.ValidationError as ex:
+        raise BadRequestError(ex)
+    print(data_obj)
+    try:
+        stock = Stocks.create(
+            name=data_obj["name"],
+            price=data_obj["price"],
+            sectors_id=data_obj["sector"],
+            unallocated=data_obj["unallocated"],
+            total_volume=data_obj["total_volume"]
+        )
+    except exc.IntegrityError as ex:
+        raise BadRequestError(ex._message())
+
+    return_stock = {
+        "id": stock.id,
+        "name": stock.name,
+        "price": stock.price,
+        "sector": stock.sectors_id,
+        "unallocated": stock.unallocated,
+        "total_volume": stock.total_volume
+    }
+    market_reverse = sorted(
+        Market_day.all(), key=lambda x: x.day, reverse=True)
+    if market_reverse[0].status == "OPEN":
+        OHLCV.create(
+            market_id=market_reverse[0].id,
+            stocks_id=stock.id,
+            open=-1,
+            high=-1,
+            low=-1,
+            close=-1,
+            volume=0
+        )
+    return Response(return_stock, status_code=200)
+
+
+@leangle.describe.tags(["Stocks"])
+@leangle.describe.parameter(
+    name='body',
+    _in='body',
+    description='Get Stock',
+    schema='StocksSchema'
+)
+@leangle.describe.response(
+    200,
+    description='Stock Retrieved',
+    schema='StocksSchema'
+)
+@stocks_routes.route('/{stock_id}', methods=['GET'], cors=True)
+def get_stock(stock_id):
+    stock = Stocks.where(id=stock_id).first()
+    if(stock == None):
+        return Response("", status_code=404)
+    return_stock = {
+        "id": stock.id,
+        "name": stock.name,
+        "price": ('%.2f' % stock.price),
+        "sector": stock.sectors_id,
+        "unallocated": stock.unallocated,
+        "total_volume": stock.total_volume
+    }
+    return return_stock
+
+
+
+3. 
+
+a) If the code has functions that are too long, then it becomes easier for bugs to pile up, when you break down your function into smaller
+functions it becomes easier to read and less complex
+
+b) The code must have descriptive variable names as this allows for better understanding of what the variables docstring
+
+c) The code must be testable which means that functions that make up the code have to come in untis so that unit testing is alot easier and possible
