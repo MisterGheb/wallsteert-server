@@ -26,6 +26,7 @@ def list_orders():
     user_id = orders_routes.current_request.context['authorizer']['principalId']
     all_orders = Order.where(users_id=user_id).all()
     return_orders = []
+    
     for order in all_orders:
         return_orders.append({
             "id": order.id,
@@ -39,6 +40,7 @@ def list_orders():
             "created_at": str(order.created_at),
             "updated_at": str(order.updated_at)
         })
+    print(return_orders)   
     return return_orders
 
 
