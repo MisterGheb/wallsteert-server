@@ -81,7 +81,15 @@ def create_order():
     order = Order.create(type=order_data['type'], bid_price=order_data["bid_price"], bid_volume=order_data["bid_volume"],
                          stocks_id=order_data['stock'], users_id=user_id, executed_volume=0, status='PENDING', created_at=dt_object, updated_at=dt_object)
     # new_available_funds = float(user.available_funds) - total_order_price
+    order_json = OrdersSchema().dump(order)
+    order_json['bid_price'] = str(order_json['bid_price'])
 
+    kinesis_client = boto3.client('kinesis', region_name='us-east-1')
+    res = kinesis_client.put_record(
+        StreamName='mina-parallel-processing-assignment',
+        Data=json.dumps(order_json).encode('utf-8'),
+        PartitionKey='data-processing'
+    )
 
     return_order = {
         "id": order.id,
