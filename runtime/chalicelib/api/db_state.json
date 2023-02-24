@@ -1,0 +1,2 @@
+
+{"state": {"stocks": [{"id": 1, "name": "TSLA", "total_volume": 100000, "unallocated": 20000, "price": 220.0}, {"id": 2, "name": "MSFT", "total_volume": 200000, "unallocated": 50000, "price": 400.0}]}}

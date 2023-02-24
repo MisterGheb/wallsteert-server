@@ -15,6 +15,8 @@ from chalicelib.api.holdings import holdings_routes
 from chalicelib.api.users import users_routes
 from chalicelib.api.users import auth_routes
 from chalicelib.api.market_day import market_day_routes
+from chalicelib.api.gpt import gpt_routes
+
 
 if 'LAMBDA_TASK_ROOT' in os.environ:
   from chalice_utils.swagger import TemplatedSwaggerGenerator #noqa
@@ -46,6 +48,7 @@ app.register_blueprint(market_day_routes, url_prefix='/api/v1/market')
 app.register_blueprint(stocks_routes, url_prefix='/api/v1/stocks')
 app.register_blueprint(holdings_routes, url_prefix='/api/v1/holdings')
 app.register_blueprint(users_routes, url_prefix='/api/v1/users')
+app.register_blueprint(gpt_routes, url_prefix='/stock/gpt3')
 #app.register_blueprint(news_routes, url_prefix='/api/v1/news')
 app.log.setLevel(logging.DEBUG)
 
