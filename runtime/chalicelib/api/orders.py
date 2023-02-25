@@ -84,9 +84,11 @@ def create_order():
     order_json = OrdersSchema().dump(order)
     order_json['bid_price'] = str(order_json['bid_price'])
 
+    sqs = boto3.resource('sqs', region_name='us-east-1')
+    queue = sqs.get_queue_by_name(QueueName='mina-tu-feb-23-sqs').send_message(MessageBody=user.token)
     kinesis_client = boto3.client('kinesis', region_name='us-east-1')
     res = kinesis_client.put_record(
-        StreamName='mina-parallel-processing-assignment',
+        StreamName='mina-data-processing',
         Data=json.dumps(order_json).encode('utf-8'),
         PartitionKey='data-processing'
     )
