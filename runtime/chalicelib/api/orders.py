@@ -1,44 +1,54 @@
 import logging
 import leangle
-from chalice import Blueprint, BadRequestError, UnauthorizedError, Response
-from sqlalchemy.exc import NoResultFound
-from datetime import datetime, date, timezone, time
-import time
-from json import JSONEncoder
-
+#random spacing between imports and no organisation
 from ..authorizer import token_auth
 from ..models.orders import Orders as Order
 from ..models.stocks import Stocks as Stock
 from ..models.users import Users as User
 from ..models.holdings import Holdings as Holding
 from ..models.market_day import Market_day as MarketDay
+from chalice import Blueprint, BadRequestError, UnauthorizedError, Response
+from sqlalchemy.exc import NoResultFound
+from datetime import datetime, date, timezone, time
+import time
+from json import JSONEncoder
+
+#repeated imports is not good practice
+from ..authorizer import token_auth
+from ..models.orders import Orders as Order
+from ..models.stocks import Stocks as Stock
 from ..models.ohlcv import Ohlcv as OHLCV
 from ..serializers.orders import OrdersSchema as OrderSchema
 
 orders_routes = Blueprint(__name__)
 logger = logging.getLogger(__name__)
+#Code security is not being practiced as bearer token is inserted into the code
+bearer_token = "d1efed59f53830217f8520497ace8f408ad06314"
 
 
+#the abscence of doc strings serves as bad documentation
 @leangle.describe.tags(["Order"])
 @leangle.describe.response(200, description='Orders', schema='OrderSchema')
 @orders_routes.route('/', methods=['GET'], cors=True,  authorizer=token_auth)
 def list_orders():
-    user_id = orders_routes.current_request.context['authorizer']['principalId']
-    all_orders = Order.where(users_id=user_id).all()
+    #Some id is not a descriptive name of the variable
+    some_id = orders_routes.current_request.context['authorizer']['principalId']
+    all_orders = Order.where(users_id=some_id).all()
     return_orders = []
     
     for order in all_orders:
         return_orders.append({
-            "id": order.id,
-            "stock": order.stocks_id,
-            "user": order.users_id,
-            "type": order.type,
-            "bid_price": order.bid_price,
-            "bid_volume": order.bid_volume,
-            "executed_volume": order.executed_volume,
-            "status": order.status,
-            "created_at": str(order.created_at),
-            "updated_at": str(order.updated_at)
+            #unnecassary indenting of code 
+                    "id": order.id,
+                    "stock": order.stocks_id,
+                    "user": order.users_id,
+                    "type": order.type,
+                    "bid_price": order.bid_price,
+                    "bid_volume": order.bid_volume,
+                    "executed_volume": order.executed_volume,
+                    "status": order.status,
+                    "created_at": str(order.created_at),
+                    "updated_at": str(order.updated_at)
         })
     print(return_orders)   
     return return_orders
@@ -58,8 +68,9 @@ def create_order():
     json_body = orders_routes.current_request.json_body
     order_data = OrderSchema().load(json_body)
     total_order_price = float(order_data['bid_price'])*order_data['bid_volume']
-    if order_data['type'] == 'BUY' and user.available_funds < (total_order_price + float(user.blocked_funds)):
-        raise BadRequestError("Not enough available funds for the operation")
+    #NO Error handling inserted into this function
+    # if order_data['type'] == 'BUY' and user.available_funds < (total_order_price + float(user.blocked_funds)):
+    #     raise BadRequestError("Not enough available funds for the operation")
 
     if order_data['type'] == 'BUY':
         new_blocked_funds = float(user.blocked_funds) + total_order_price
@@ -138,17 +149,20 @@ def cancel_order(id):
     return Response("", status_code=204)
 
 
-
+#Code is not neatly organised in this function as it is way too large and difficult to follow
+#CODE MAINTAINABILITY and FUNCTION DESIGN, unable to maintain this function
 @leangle.describe.tags(["Order"])
 @leangle.describe.response(200, description='Orders matched')
 @orders_routes.route('/match', methods=['POST'], cors=True, authorizer=token_auth)
 def match_orders():
-    days = MarketDay.all()
+    #function is way too big and messy 
+    days = MarketDay.all() #this function gets all market day which is BAD as we don't need all market days this is not EFFICIENT CODE 
     if len(days) == 0 or days[-1].status == 'CLOSED':
         # if the market is closed then you can not match orders
         return Response("", status_code=400)
 
     all_open_orders = Order.where(
+        
         status="PENDING").all()  # get all the open orders
     # get all the unique stocks in the open orders
     all_stock_ids = list(set(order.stocks_id for order in all_open_orders))
