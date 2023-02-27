@@ -27,6 +27,10 @@ logger = logging.getLogger(__name__)
 @leangle.describe.response(200, description='Holdings Listed', schema='HoldingsSchema')
 @holdings_routes.route('/', methods=['GET'], cors=True, authorizer=token_auth)
 def list_holdings():
+
+    """
+    Gets a users holdings and structures it in the correct format
+    """
     user_id = holdings_routes.current_request.context['authorizer']['principalId']
     currentStock = 0
     print("function invoked")

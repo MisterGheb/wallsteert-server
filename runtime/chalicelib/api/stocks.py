@@ -28,6 +28,10 @@ logger = logging.getLogger(__name__)
 @leangle.describe.response(200, description='Stocks Listed', schema='StocksSchema')
 @stocks_routes.route('/', methods=['GET'], cors=True)
 def list_stocks():
+    """
+    Gets all the stocks in the market
+    
+    """
     stocks = Stocks.all()
     returnStocks = []
     for stock in stocks:
@@ -47,6 +51,11 @@ def list_stocks():
 @leangle.describe.response(200, description='Stock Created', schema='StocksSchema')
 @stocks_routes.route('/', methods=['POST'], cors=True, authorizer=token_auth)
 def create_stock():
+
+    """
+    Creates a new stock
+    
+    """
     user_id = stocks_routes.current_request.context['authorizer']['principalId']
     user = User.find_or_fail(user_id)
 
@@ -96,6 +105,11 @@ def create_stock():
 @leangle.describe.response(200, description='Stock Retrieved', schema='StocksSchema')
 @stocks_routes.route('/{stock_id}', methods=['GET'], cors=True)
 def get_stock(stock_id):
+
+    """
+    Search for a stock using its ID
+    
+    """
     stock = Stocks.where(id=stock_id).first()
     if(stock == None):
         return Response("", status_code=404)

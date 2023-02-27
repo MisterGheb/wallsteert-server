@@ -30,6 +30,10 @@ logger = logging.getLogger(__name__)
 @leangle.describe.response(200, description='User Signed up', schema='SignupSchema')
 @auth_routes.route('/signup', methods=['POST'], cors=True)
 def register_user():
+    """
+    Allows a new user to signup
+    
+    """
     json_body = auth_routes.current_request.json_body
     # proper email format
     regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
@@ -65,6 +69,10 @@ def register_user():
 @leangle.describe.response(200, description='User Logged in', schema='LoginSchema')
 @auth_routes.route('/login', methods=['POST'], cors=True)
 def login_user():
+    """
+    Allows a user to Login
+    
+    """
     json_body = auth_routes.current_request.json_body
     if json_body.get('email') is None or json_body.get('password') is None:
         return Response("", status_code=204)
@@ -85,6 +93,10 @@ def login_user():
 @leangle.describe.response(200, description='User Loggedp out', schema='LoginSchema')
 @auth_routes.route('/logout', methods=['POST'], cors=True, authorizer=token_auth)
 def logout_user():
+    """
+    Allows a user to logout
+    
+    """
     user_id = auth_routes.current_request.context['authorizer']['principalId']
     user = Users.find_or_fail(user_id)
     user.update(token=None)
@@ -97,6 +109,10 @@ def logout_user():
 @leangle.describe.response(200, description='User Profile', schema='UserSchema')
 @users_routes.route('/profile', methods=['GET'], cors=True, authorizer=token_auth)
 def user_profile():
+    """
+    Searches for a users profile
+    
+    """
     user_id = auth_routes.current_request.context['authorizer']['principalId']
     user = Users.where(id=user_id).first()
     if(user == None):

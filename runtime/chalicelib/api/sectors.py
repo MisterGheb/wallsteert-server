@@ -24,6 +24,11 @@ logger = logging.getLogger(__name__)
 @leangle.describe.response(200, description='Sectors Listed', schema='SectorsSchema')
 @sectors_routes.route('/', methods=['GET'], cors=True)
 def list_sectors():
+
+    """
+    Gets all the sectors in the market
+    
+    """
     sectors = Sectors.all()
     status = "Success"
     if(sectors==[]):
@@ -37,6 +42,11 @@ def list_sectors():
 @leangle.describe.response(200, description='Sector Created', schema='SectorsSchema')
 @sectors_routes.route('/', methods=['POST'], cors=True, authorizer=token_auth)
 def create_sector():
+
+    """
+    Creates a new sector in the market
+    
+    """
     user_id = sectors_routes.current_request.context['authorizer']['principalId']
     user = User.find_or_fail(user_id)
     json_body = sectors_routes.current_request.json_body
@@ -63,6 +73,10 @@ def create_sector():
 @leangle.describe.response(200, description='Sector Retrieved', schema='SectorsSchema')
 @sectors_routes.route('/{sector_id}', methods=['GET'], cors=True)
 def get_sector(sector_id):
+    """
+    Search for a sector using its ID
+    
+    """
     sector = Sectors.where(id=sector_id).first()
     status = "Success"
     if(sector == None):

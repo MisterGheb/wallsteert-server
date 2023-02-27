@@ -29,6 +29,10 @@ def initialize_ohlcv(market_day_id):
 @leangle.describe.response(204, description='Market open')
 @market_day_routes.route('/open', methods=['POST'], cors=True,  authorizer=token_auth)
 def open_market():
+
+    """
+    Opens the market
+    """
     all_days = MarketDay.all()
     if len(all_days) > 0 and all_days[-1].status == "OPEN":
         print("length of days is greater than 0")
@@ -47,6 +51,11 @@ def open_market():
 @leangle.describe.response(204, description='Market closed')
 @market_day_routes.route('/close', methods=['POST'], cors=True,  authorizer=token_auth)
 def close_market():
+    """
+    Closes the market
+
+    """
+
     all_days = MarketDay.all()
     if len(all_days) == 0 or all_days[-1].status == "CLOSED":
         raise BadRequestError("Market day is not open yet")
@@ -58,6 +67,11 @@ def close_market():
 @leangle.describe.response(204, description='Market closed', schema='OHLCVResponseSchema')
 @market_day_routes.route('/ohlc', methods=['GET'], cors=True)
 def get_ohlcv():
+
+    """
+    Gets a users OHLCV 
+    
+    """
     if not market_day_routes.current_request.query_params:
         print("there is no query param ")
         return Response({"data": "Market is now open"}, status_code=400)
