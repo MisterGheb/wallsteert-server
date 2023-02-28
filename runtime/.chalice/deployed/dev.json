@@ -1,0 +1,33 @@
+{
+  "resources": [
+    {
+      "name": "managed-layer",
+      "resource_type": "lambda_layer",
+      "layer_version_arn": "arn:aws:lambda:us-east-1:280022023954:layer:runtime-dev-managed-layer:12"
+    },
+    {
+      "name": "default-role",
+      "resource_type": "iam_role",
+      "role_arn": "arn:aws:iam::280022023954:role/runtime-dev",
+      "role_name": "runtime-dev"
+    },
+    {
+      "name": "api_handler",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:us-east-1:280022023954:function:runtime-dev"
+    },
+    {
+      "name": "token_auth",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:us-east-1:280022023954:function:runtime-dev-token_auth"
+    },
+    {
+      "name": "rest_api",
+      "resource_type": "rest_api",
+      "rest_api_id": "s82c6217c6",
+      "rest_api_url": "https://s82c6217c6.execute-api.us-east-1.amazonaws.com/api/"
+    }
+  ],
+  "schema_version": "2.0",
+  "backend": "api"
+}

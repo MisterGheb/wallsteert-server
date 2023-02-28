@@ -18,6 +18,9 @@ class Users(BaseModel):
     password = Column(String(64))
     token = Column(String(40))
     loggedIn = Column(Boolean())
+    question = Column(String)
+    answer = Column(String)
+    reset_code = Column(Integer)
 
     orders = relationship('Orders')
     holdings = relationship('Holdings')

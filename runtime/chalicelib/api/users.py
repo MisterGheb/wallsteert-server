@@ -110,3 +110,44 @@ def user_profile():
     }
 
     return return_user
+
+
+
+@leangle.describe.tags(["Users"])
+@leangle.describe.parameter(name='body', _in='body', description='User Login', schema='LoginSchema')
+@leangle.describe.response(200, description='User Logged in', schema='LoginSchema')
+@auth_routes.route('/forgot_password', methods=['POST'], cors=True)
+def login_user():
+    json_body = auth_routes.current_request.json_body
+    if json_body.get("email") is None:
+        raise BadRequestError(f"Email doesn't exists")
+    user = User.where(email=json_body["email"]).first()
+    if not user.question:
+        raise BadRequestError("User cannot reset password since no security question was provided")
+    if json_body.get('answer') != user.answer:
+        raise BadRequestError(f"Wrong answer to security question")
+
+    code = random.randint(1000,9999)
+    user.update(reset_code=code)
+    return {"code": code}
+
+
+
+@leangle.describe.tags(["Auth"])
+@leangle.describe.parameter( name="body", _in="body", description="Set new password")
+@leangle.describe.response(200, description="Password redefined")
+@auth_routes.route( "/reset",methods=["POST"], cors=True,content_types=["application/json; charset=utf-8","application/json",
+        "application/x-www-form-urlencoded",
+    ],
+)
+def reset_password():
+    json_body = auth_routes.current_request.json_body
+    if json_body.get("code") is None or json_body.get("new_password") is None:
+        raise BadRequestError(f"Missing required field")
+    if json_body.get("email") is None:
+        raise BadRequestError(f"Missing required field 'email'")
+    user = User.where(email=json_body["email"]).first()
+    if json_body['code'] != user.reset_code:
+        raise BadRequestError("Invalid code")
+    user.update(password=json_body['new_password'])
+    return {"messgae": "Password successfully reset"}
